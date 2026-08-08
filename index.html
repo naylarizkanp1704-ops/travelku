@@ -2,7 +2,7 @@
 <html lang="id">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover, maximum-scale=1.0, user-scalable=no">
 <title>TravelKu — myBCA Prototype</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;600;700&family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
@@ -35,8 +35,9 @@
   --font-display:'Space Grotesk', sans-serif;
   --font-body:'Inter', sans-serif;
 }
-*{box-sizing:border-box; margin:0; padding:0;}
+*{box-sizing:border-box; margin:0; padding:0; -webkit-tap-highlight-color:transparent;}
 html,body{height:100%;}
+html{ -webkit-text-size-adjust:100%; }
 body{
   font-family:var(--font-body);
   color:var(--ink);
@@ -44,26 +45,32 @@ body{
     radial-gradient(1200px 600px at 15% -10%, #E7F0FF 0%, transparent 60%),
     radial-gradient(1000px 500px at 90% 10%, #E9FBF7 0%, transparent 55%),
     linear-gradient(180deg,#F4F8FF 0%, #EEF2FB 100%);
-  height:100%;
+  height:100dvh;
+  width:100vw;
   min-height:100dvh;
   display:flex;
   align-items:stretch;
   justify-content:center;
   padding:0;
+  margin:0;
   overflow:hidden;
+  position:fixed;
+  inset:0;
 }
 .backdrop-caption{ display:none; }
-.stage{display:flex; align-items:stretch; gap:0; justify-content:center; width:100%;}
+.stage{display:flex; align-items:stretch; gap:0; justify-content:center; width:100%; height:100%;}
 .side-note{ display:none; }
 
-/* ===== App shell — fills the phone viewport, no desktop bezel ===== */
+/* ===== App shell — TRUE mobile viewport, no desktop bezel, safe-area aware ===== */
 .phone{
-  width:100%; max-width:520px; height:100dvh; background:var(--white);
+  width:100%; max-width:560px; height:100%; height:100dvh; background:var(--white);
   padding:0; box-shadow:none; position:relative; margin:0 auto;
 }
 .phone-screen{
   width:100%; height:100%; background:var(--white); overflow:hidden; position:relative;
   display:flex; flex-direction:column;
+  padding-top:env(safe-area-inset-top);
+  padding-bottom:env(safe-area-inset-bottom);
 }
 .notch{ display:none; }
 .statusbar{
@@ -89,7 +96,7 @@ body{
 
 /* ===== Bottom nav ===== */
 .bottomnav{
-  position:absolute; left:14px; right:14px; bottom:16px; height:70px;
+  position:absolute; left:14px; right:14px; bottom:calc(16px + env(safe-area-inset-bottom)); height:70px;
   background:rgba(255,255,255,.82); backdrop-filter:blur(18px);
   border-radius:26px; box-shadow:var(--shadow-md);
   display:flex; align-items:center; justify-content:space-around;
@@ -170,7 +177,7 @@ body{
 
 /* toast */
 .toast{
-  position:absolute; left:22px; right:22px; bottom:100px; background:var(--ink); color:#fff; padding:14px 18px;
+  position:absolute; left:22px; right:22px; bottom:calc(100px + env(safe-area-inset-bottom)); background:var(--ink); color:#fff; padding:14px 18px;
   border-radius:16px; font-size:13px; font-weight:600; display:flex; align-items:center; gap:10px; z-index:200;
   transform:translateY(140%); transition:transform .4s cubic-bezier(.19,1,.22,1); box-shadow:var(--shadow-lg);
 }
@@ -178,7 +185,7 @@ body{
 
 /* fab */
 .fab{
-  position:absolute; right:22px; bottom:96px; width:56px; height:56px; border-radius:20px;
+  position:absolute; right:22px; bottom:calc(96px + env(safe-area-inset-bottom)); width:56px; height:56px; border-radius:20px;
   background:linear-gradient(135deg,var(--blue),var(--blue-deep)); box-shadow:0 12px 26px rgba(24,88,224,.4);
   display:flex; align-items:center; justify-content:center; cursor:pointer; z-index:35; transition:.2s;
 }
@@ -189,7 +196,7 @@ input,select{font-family:var(--font-body);}
 
 /* ===== AI Assistant avatar (bottom-left, floating) ===== */
 .ai-assistant{
-  position:absolute; left:20px; bottom:96px; width:60px; height:60px; z-index:36;
+  position:absolute; left:20px; bottom:calc(96px + env(safe-area-inset-bottom)); width:60px; height:60px; z-index:36;
   cursor:pointer; transition:transform .25s cubic-bezier(.19,1,.22,1);
 }
 .ai-assistant.hidden{ display:none; }
@@ -241,6 +248,26 @@ input,select{font-family:var(--font-body);}
 .ai-typing span:nth-child(2){ animation-delay:.15s; }
 .ai-typing span:nth-child(3){ animation-delay:.3s; }
 @keyframes aiTyping{ 0%,60%,100%{ transform:translateY(0); opacity:.5; } 30%{ transform:translateY(-4px); opacity:1; } }
+
+/* ===== In-app guided tour ===== */
+.tour-layer{ position:absolute; inset:0; z-index:400; opacity:0; pointer-events:none; transition:opacity .3s; }
+.tour-layer.show{ opacity:1; pointer-events:auto; }
+.tour-spotlight{
+  position:absolute; border-radius:18px;
+  box-shadow:0 0 0 9999px rgba(8,16,36,.62);
+  transition:top .35s cubic-bezier(.19,1,.22,1), left .35s cubic-bezier(.19,1,.22,1), width .35s, height .35s;
+  pointer-events:none;
+}
+.tour-tooltip{
+  position:absolute; background:#fff; border-radius:18px; padding:16px 17px; width:250px;
+  box-shadow:var(--shadow-lg); transition:top .35s cubic-bezier(.19,1,.22,1), left .35s cubic-bezier(.19,1,.22,1);
+  animation:screenIn .35s ease;
+}
+.tour-progress{ font-size:10.5px; font-weight:800; color:var(--blue); letter-spacing:.06em; margin-bottom:6px; }
+.tour-title{ font-family:var(--font-display); font-weight:700; font-size:15px; margin-bottom:5px; }
+.tour-body{ font-size:12px; color:var(--muted); line-height:1.5; margin-bottom:14px; }
+.tour-actions{ display:flex; align-items:center; justify-content:space-between; }
+.tour-skip{ font-size:12px; font-weight:700; color:var(--muted); cursor:pointer; }
 </style>
 </head>
 <body>
@@ -292,6 +319,7 @@ input,select{font-family:var(--font-body);}
       <div class="overlay" id="overlayNotif"></div>
       <div class="overlay center" id="overlayToastCard"></div>
       <div class="overlay" id="overlayAI"></div>
+      <div class="tour-layer" id="tourLayer"></div>
     </div>
   </div>
 
@@ -519,7 +547,7 @@ function updateAIWidget(inApp){
     setTimeout(()=> aiAssistant.classList.remove("pop"), 600);
     if(!aiHasIntroduced){
       aiHasIntroduced = true;
-      setTimeout(()=> toast("Halo! Aku Vira, asisten AI TravelKu — ketuk aku ya ✨", ic.check), 900);
+      setTimeout(()=> toast("Halo! Aku Fadhil AI, asisten AI TravelKu — ketuk aku ya ✨", ic.check), 900);
     }
   }
 }
@@ -541,7 +569,7 @@ SCREENS.bcaHome = ()=>`
       <div style="width:38px;height:38px;border-radius:12px;background:linear-gradient(135deg,var(--blue),var(--blue-deep));display:flex;align-items:center;justify-content:center;color:#fff;font-family:var(--font-display);font-weight:700;">B</div>
       <div>
         <div style="font-size:11px;color:var(--muted);font-weight:600;">Selamat pagi,</div>
-        <div style="font-size:15px;font-weight:800;">Alya Putri</div>
+        <div style="font-size:15px;font-weight:800;">Dina Mika</div>
       </div>
     </div>
     <div id="bellBtn" style="width:38px;height:38px;border-radius:12px;background:var(--sky);display:flex;align-items:center;justify-content:center;color:var(--blue-deep);cursor:pointer;position:relative;">
@@ -645,16 +673,17 @@ SCREENS.dashboard = ()=>{
   const safeToday = Math.max(0, (t.budget/t.duration) - (state.expenses.filter(e=>e.day===state.currentDay).reduce((s,e)=>s+e.amount,0)));
   return `
   <div class="px" style="padding-top:6px;">
-    <div style="display:flex; align-items:center; justify-content:space-between; margin-bottom:16px;">
-      <div>
-        <div class="eyebrow">TRAVELKU</div>
-        <div class="h-display" style="font-size:19px; margin-top:2px;">Halo, Alya ✈️</div>
+    <div style="display:flex; align-items:center; justify-content:space-between; margin-bottom:14px;">
+      <div style="display:flex; align-items:center; gap:8px;" id="tourTravelKuLogo">
+        <div style="width:24px;height:24px;border-radius:8px;background:linear-gradient(135deg,var(--blue),var(--mint));display:flex;align-items:center;justify-content:center;color:#fff;font-family:var(--font-display);font-weight:700;font-size:12px;flex:0 0 auto;">T</div>
+        <div class="h-display" style="font-size:14.5px; letter-spacing:-.01em;">TravelKu</div>
       </div>
       <div id="bellBtn2" style="width:38px;height:38px;border-radius:12px;background:var(--sky);display:flex;align-items:center;justify-content:center;color:var(--blue-deep);cursor:pointer;position:relative;">
         ${ic.bell.replace('width="24" height="24"','width="19" height="19"')}
         <div style="position:absolute;top:7px;right:8px;width:7px;height:7px;border-radius:50%;background:var(--coral);border:1.5px solid #fff;" class="pulse-dot"></div>
       </div>
     </div>
+    <div class="h-display" style="font-size:19px; margin-bottom:16px;">Halo, Dina Mika ✈️</div>
 
     <div style="background:${vibe.grad}; border-radius:24px; padding:20px; color:#fff; position:relative; overflow:hidden; box-shadow:var(--shadow-md); transition:background 1.2s ease;">
       <div style="position:absolute; right:-10px; bottom:-30px; width:150px; height:150px; border-radius:50%; background:rgba(255,255,255,.06);"></div>
@@ -1130,6 +1159,7 @@ SCREENS.more = ()=>`
     ${moreItem("check","summary","Ringkasan Perjalanan","Lihat rekap trip yang sedang berjalan")}
     ${moreItem("bell","notifOpen","Notifikasi","Pengingat & penawaran terbaru")}
     ${moreItem("sos","emergency","Mode Darurat","Bantuan cepat saat perjalanan")}
+    ${moreItem("pin","tourReplay","Tur Panduan","Lihat lagi cara pakai fitur TravelKu")}
   </div>
   <div style="height:16px;"></div>
 </div>`;
@@ -1365,7 +1395,7 @@ function renderSplitDetail(){
 
     <label style="font-size:11.5px; font-weight:800; color:var(--muted); text-transform:uppercase;">Metode Pembayaran Diterima</label>
     <div style="display:flex; gap:7px; flex-wrap:wrap; margin-top:9px; margin-bottom:20px;">
-      ${["myBCA","QRIS","DANA","GoPay","ShopeePay","Bank Lain"].map(m=>`<div class="chip splitPayChip ${m===splitState.method?'active':''}" data-m="${m}">${m}</div>`).join("")}
+      ${["myBCA","QRIS","DANA","GoPay","OVO","ShopeePay","Bank Lain"].map(m=>`<div class="chip splitPayChip ${m===splitState.method?'active':''}" data-m="${m}">${m}</div>`).join("")}
     </div>
 
     <button class="btn btn-primary btn-block" id="sendSplitReq" ${splitState.picked.length?'':'disabled style="opacity:.45;"'}>Kirim Permintaan Bayar</button>
@@ -1503,6 +1533,7 @@ function bindScreenEvents(name, root){
         else if(a==="summary") setScreen("summary", {slide:true});
         else if(a==="notifOpen") openOverlay("overlayNotif", renderNotif);
         else if(a==="emergency") setScreen("emergency", {slide:true});
+        else if(a==="tourReplay"){ setScreen("dashboard"); setTimeout(startTour, 350); }
       };
     });
   }
@@ -1556,14 +1587,14 @@ function aiReply(textRaw){
 
 function renderAIChat(){
   if(aiMessages.length===0){
-    aiMessages.push({ role:"bot", text:`Hai! Aku Vira 👋 asisten AI TravelKu-mu untuk trip ke ${state.trip.destination}. Mau tanya rekomendasi kuliner, itinerary, tips hemat, atau apapun soal perjalananmu?` });
+    aiMessages.push({ role:"bot", text:`Hai! Aku Fadhil AI 👋 asisten AI TravelKu-mu untuk trip ke ${state.trip.destination}. Mau tanya rekomendasi kuliner, itinerary, tips hemat, atau apapun soal perjalananmu?` });
   }
   return `<div class="sheet ai-chat-sheet" style="padding:0;">
     <div class="sheet-handle" style="margin-top:10px;"></div>
     <div class="ai-chat-head">
       <div class="ai-avatar-ring"><div class="ai-avatar-inner">${AVATAR_CASUAL}</div></div>
       <div style="flex:1;">
-        <div class="ai-chat-title">Vira — AI Travel Assistant</div>
+        <div class="ai-chat-title">Fadhil AI — AI Travel Assistant</div>
         <div class="ai-chat-sub"><span class="liveDot"></span> Online, siap bantu trip-mu</div>
       </div>
       <div class="close-x" id="aiCloseX" style="position:relative; top:0; right:0;">${ic.plus.replace('viewBox="0 0 24 24"','viewBox="0 0 24 24" style="transform:rotate(45deg)"')}</div>
@@ -1575,7 +1606,7 @@ function renderAIChat(){
       ${AI_QUICK_CHIPS.map(c=>`<div class="ai-suggest-chip" data-key="${c.key}" data-label="${c.label.replace(/"/g,'')}">${c.label}</div>`).join("")}
     </div>
     <div class="ai-chat-inputrow">
-      <input id="aiInput" type="text" placeholder="Tanya Vira tentang tripmu..." autocomplete="off">
+      <input id="aiInput" type="text" placeholder="Tanya Fadhil AI tentang tripmu..." autocomplete="off">
       <div class="ai-send-btn" id="aiSendBtn">${ic.arrow.replace('viewBox="0 0 24 24"','viewBox="0 0 24 24" style="width:18px;height:18px;color:#fff"')}</div>
     </div>
   </div>`;
@@ -1614,6 +1645,68 @@ function aiSend(text){
       aiScrollBottom();
     }
   }, 700 + Math.random()*500);
+}
+
+/* ===== In-app guided tour ===== */
+const TOUR_STEPS = [
+  { selector:"#tourTravelKuLogo", title:"TravelKu", body:"Rencanakan perjalanan dan kelola keuangan travelingmu dalam satu tempat, langsung dari myBCA." },
+  { selector:'.navitem[data-tab="wallet"]', title:"Travel Wallet", body:"Pantau anggaran, catat pengeluaran harian, dan lihat sisa budget selama trip." },
+  { selector:'.navitem[data-tab="explore"]', title:"Explore", body:"Temukan rekomendasi kuliner, atraksi, dan promo BCA di sekitar destinasimu." },
+  { selector:"#aiAssistant", title:"Fadhil AI", body:"Tanya apa saja soal tripmu ke Fadhil AI — kuliner, itinerary, sampai tips hemat budget." },
+  { selector:'.navitem[data-tab="more"]', title:"Rewards & Split Bill", body:"Tukar poin jadi voucher dan bagi tagihan dengan teman perjalanan di menu ini." },
+];
+let tourStep = 0;
+const tourLayer = document.getElementById("tourLayer");
+
+function startTour(){
+  tourStep = 0;
+  tourLayer.classList.add("show");
+  renderTourStep();
+}
+function endTour(){
+  tourLayer.classList.remove("show");
+  tourLayer.innerHTML = "";
+  try{ localStorage.setItem("travelku_tour_seen","1"); }catch(e){}
+}
+function renderTourStep(){
+  const step = TOUR_STEPS[tourStep];
+  const target = document.querySelector(step.selector);
+  if(!target){ tourStep++; if(tourStep<TOUR_STEPS.length) renderTourStep(); else endTour(); return; }
+  const r = target.getBoundingClientRect();
+  const host = document.getElementById("phoneScreen").getBoundingClientRect();
+  const top = r.top - host.top, left = r.left - host.left;
+  const spotPad = 8;
+  const spotTop = top - spotPad, spotLeft = left - spotPad;
+  const spotW = r.width + spotPad*2, spotH = r.height + spotPad*2;
+
+  const nearTop = top < host.height*0.35;
+  let ttTop = nearTop ? (spotTop + spotH + 14) : (spotTop - 14);
+  let ttLeft = Math.min(Math.max(left + r.width/2 - 125, 14), host.width - 264);
+  const ttStyle = nearTop
+    ? `top:${ttTop}px; left:${ttLeft}px;`
+    : `top:${ttTop}px; left:${ttLeft}px; transform:translateY(-100%);`;
+
+  tourLayer.innerHTML = `
+    <div class="tour-spotlight" style="top:${spotTop}px; left:${spotLeft}px; width:${spotW}px; height:${spotH}px;"></div>
+    <div class="tour-tooltip" style="${ttStyle}">
+      <div class="tour-progress">LANGKAH ${tourStep+1} DARI ${TOUR_STEPS.length}</div>
+      <div class="tour-title">${step.title}</div>
+      <div class="tour-body">${step.body}</div>
+      <div class="tour-actions">
+        <div class="tour-skip" id="tourSkip">Lewati</div>
+        <div style="display:flex; gap:8px;">
+          ${tourStep>0 ? '<button class="btn btn-outline btn-sm" id="tourBack">Kembali</button>' : ""}
+          <button class="btn btn-primary btn-sm" id="tourNext">${tourStep===TOUR_STEPS.length-1 ? "Selesai" : "Lanjut"}</button>
+        </div>
+      </div>
+    </div>`;
+  document.getElementById("tourSkip").onclick = endTour;
+  document.getElementById("tourNext").onclick = ()=>{
+    if(tourStep===TOUR_STEPS.length-1){ endTour(); return; }
+    tourStep++; renderTourStep();
+  };
+  const back = document.getElementById("tourBack");
+  if(back) back.onclick = ()=>{ tourStep--; renderTourStep(); };
 }
 
 function bindOverlayEvents(id){
@@ -1655,8 +1748,13 @@ function bindOverlayEvents(id){
   if(id==="overlayPromo"){
     const dismiss = el.querySelector("#promoDismiss");
     const explore = el.querySelector("#promoExplore");
-    if(dismiss) dismiss.onclick = ()=> closeOverlay("overlayPromo");
-    if(explore) explore.onclick = ()=>{ closeOverlay("overlayPromo"); setScreen("explore", {slide:true}); };
+    const maybeStartTour = ()=>{
+      let seen = false;
+      try{ seen = localStorage.getItem("travelku_tour_seen")==="1"; }catch(e){}
+      if(!seen) setTimeout(startTour, 400);
+    };
+    if(dismiss) dismiss.onclick = ()=>{ closeOverlay("overlayPromo"); maybeStartTour(); };
+    if(explore) explore.onclick = ()=>{ closeOverlay("overlayPromo"); setScreen("explore", {slide:true}); maybeStartTour(); };
   }
   if(id==="overlayAddExpense"){
     el.querySelectorAll(".catChip").forEach(c=> c.onclick = ()=>{ newExp.cat=c.dataset.cat; el.querySelectorAll(".catChip").forEach(x=>x.classList.remove("active")); c.classList.add("active"); });
