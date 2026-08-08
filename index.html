@@ -266,6 +266,15 @@ input,select{font-family:var(--font-body);}
 .tour-body{ font-size:12px; color:var(--muted); line-height:1.5; margin-bottom:14px; }
 .tour-actions{ display:flex; align-items:center; justify-content:space-between; }
 .tour-skip{ font-size:12px; font-weight:700; color:var(--muted); cursor:pointer; }
+
+/* ===== Profile / account menu (Dina Mika -> Log Out) ===== */
+.profile-trigger{ cursor:pointer; transition:.18s; border-radius:10px; }
+.profile-trigger:active{ transform:scale(.97); opacity:.85; }
+.profile-trigger .chevronIcon{ width:13px; height:13px; color:var(--muted2); transition:transform .25s; display:inline-flex; }
+.profile-trigger .chevronIcon svg{ width:100%; height:100%; display:block; }
+.profile-trigger.open .chevronIcon{ transform:rotate(180deg); }
+.profile-menu-item{ padding:14px; display:flex; align-items:center; gap:13px; cursor:pointer; }
+.profile-menu-item:active{ transform:scale(.98); }
 </style>
 </head>
 <body>
@@ -310,6 +319,7 @@ input,select{font-family:var(--font-body);}
       <div class="overlay" id="overlayNotif"></div>
       <div class="overlay center" id="overlayToastCard"></div>
       <div class="overlay" id="overlayAI"></div>
+      <div class="overlay" id="overlayProfileMenu"></div>
       <div class="tour-layer" id="tourLayer"></div>
     </div>
   </div>
@@ -360,6 +370,8 @@ const ic = {
   phone:`<svg viewBox="0 0 24 24" fill="none"><path d="M7 3h4l1 4-2 2c1 2 2.5 3.5 4.5 4.5l2-2 4 1v4c0 1-1 2-2 2C10.5 18.5 5.5 13.5 5 6c0-1 1-2 2-3Z" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"/></svg>`,
   arrow:`<svg viewBox="0 0 24 24" fill="none"><path d="M5 12h14M13 6l6 6-6 6" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/></svg>`,
   cloud:`<svg viewBox="0 0 24 24" fill="none"><path d="M7 17h10a4 4 0 0 0 0-8 5.5 5.5 0 0 0-10.6 1.6A3.5 3.5 0 0 0 7 17Z" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"/></svg>`,
+  chevronDown:`<svg viewBox="0 0 24 24" fill="none"><path d="M6 9l6 6 6-6" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/></svg>`,
+  logout:`<svg viewBox="0 0 24 24" fill="none"><path d="M15 17l5-5-5-5M20 12H9" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"/><path d="M12 19H6a2 2 0 0 1-2-2V7a2 2 0 0 1 2-2h6" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"/></svg>`,
 };
 
 /* =========================================================
@@ -711,7 +723,13 @@ SCREENS.dashboard = ()=>{
         <div style="position:absolute;top:7px;right:8px;width:7px;height:7px;border-radius:50%;background:var(--coral);border:1.5px solid #fff;" class="pulse-dot"></div>
       </div>
     </div>
-    <div class="h-display" style="font-size:19px; margin-bottom:16px;">Halo, Dina Mika ✈️</div>
+    <div class="h-display" style="font-size:19px; margin-bottom:16px; display:flex; align-items:center; gap:6px;">
+      Halo,
+      <span id="dashProfileBtn" class="profile-trigger" style="display:inline-flex; align-items:center; gap:4px;">
+        Dina Mika <span class="chevronIcon">${ic.chevronDown}</span>
+      </span>
+      ✈️
+    </div>
 
     <div style="background:${vibe.grad}; border-radius:24px; padding:20px; color:#fff; position:relative; overflow:hidden; box-shadow:var(--shadow-md); transition:background 1.2s ease;">
       <div style="position:absolute; right:-10px; bottom:-30px; width:150px; height:150px; border-radius:50%; background:rgba(255,255,255,.06);"></div>
@@ -1470,6 +1488,26 @@ function renderNotif(){
   </div>`;
 }
 
+/* Profile / account menu */
+function renderProfileMenu(){
+  return `<div class="sheet" style="padding-bottom:22px;">
+    <div class="sheet-handle"></div>
+    <div style="display:flex; align-items:center; gap:12px; padding:2px 2px 16px;">
+      <div style="width:50px;height:50px;border-radius:50%; background:linear-gradient(135deg,var(--blue-light),var(--blue-deep)); color:#fff; display:flex; align-items:center; justify-content:center; font-weight:800; font-size:17px; flex:0 0 auto;">DM</div>
+      <div style="flex:1;">
+        <div style="font-weight:800; font-size:15px;">Dina Mika</div>
+        <div class="muted" style="font-size:11.5px; margin-top:2px;">•••• 4471 · myBCA Prioritas</div>
+      </div>
+    </div>
+    <div style="height:1px; background:var(--line); margin-bottom:12px;"></div>
+    <div class="card tap profile-menu-item" id="profileLogoutBtn" style="border-color:var(--coral-soft);">
+      <div class="iconwrap" style="background:var(--coral-soft); color:var(--coral); width:42px; height:42px; border-radius:13px;">${ic.logout.replace('width="24" height="24"','width="19" height="19"')}</div>
+      <div style="flex:1; font-weight:800; font-size:13.5px; color:var(--coral);">Log Out</div>
+      <span style="width:15px;height:15px; color:var(--coral);">${ic.arrow}</span>
+    </div>
+  </div>`;
+}
+
 /* =========================================================
    EVENT BINDING
    ========================================================= */
@@ -1494,6 +1532,8 @@ function bindScreenEvents(name, root){
   if(["dashboard","wallet","explore","stats","more"].includes(name)) renderNav();
   if(name==="dashboard"){
     const b = root.querySelector("#bellBtn2"); if(b) b.onclick = ()=> openOverlay("overlayNotif", renderNotif);
+    const profBtn = root.querySelector("#dashProfileBtn");
+    if(profBtn) profBtn.onclick = ()=>{ profBtn.classList.add("open"); openOverlay("overlayProfileMenu", renderProfileMenu); };
     root.querySelectorAll(".reminder-chip[data-action]").forEach(c=>{
       c.onclick = ()=>{
         const a = c.dataset.action;
@@ -1742,7 +1782,12 @@ function renderTourStep(){
 
 function bindOverlayEvents(id){
   const el = document.getElementById(id);
-  el.onclick = (e)=>{ if(e.target===el) closeOverlay(id); };
+  el.onclick = (e)=>{
+    if(e.target===el){
+      closeOverlay(id);
+      if(id==="overlayProfileMenu"){ const t=document.getElementById("dashProfileBtn"); if(t) t.classList.remove("open"); }
+    }
+  };
 
   if(id==="overlayAI"){
     aiScrollBottom();
@@ -1819,6 +1864,15 @@ function bindOverlayEvents(id){
     if(send) send.onclick = ()=>{ if(!splitState.picked.length) return; el.innerHTML = renderSplitSuccess(); bindOverlayEvents(id); };
     const done = el.querySelector("#splitDone");
     if(done) done.onclick = ()=> closeOverlay("overlaySplitBill");
+  }
+  if(id==="overlayProfileMenu"){
+    const logoutBtn = el.querySelector("#profileLogoutBtn");
+    if(logoutBtn) logoutBtn.onclick = ()=>{
+      closeOverlay("overlayProfileMenu");
+      const t = document.getElementById("dashProfileBtn"); if(t) t.classList.remove("open");
+      toast("Anda keluar dari TravelKu", ic.logout);
+      setTimeout(()=> setScreen("bcaHome"), 320);
+    };
   }
 }
 
