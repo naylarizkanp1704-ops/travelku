@@ -174,9 +174,10 @@ body{
 .toast{
   position:absolute; left:22px; right:22px; bottom:calc(100px + env(safe-area-inset-bottom)); background:var(--ink); color:#fff; padding:14px 18px;
   border-radius:16px; font-size:13px; font-weight:600; display:flex; align-items:center; gap:10px; z-index:200;
-  transform:translateY(140%); transition:transform .4s cubic-bezier(.19,1,.22,1); box-shadow:var(--shadow-lg);
+  transform:translateY(140%); opacity:0; visibility:hidden; pointer-events:none;
+  transition:transform .4s cubic-bezier(.19,1,.22,1), opacity .3s ease, visibility 0s linear .4s; box-shadow:var(--shadow-lg);
 }
-.toast.show{transform:translateY(0);}
+.toast.show{ transform:translateY(0); opacity:1; visibility:visible; pointer-events:auto; transition:transform .4s cubic-bezier(.19,1,.22,1), opacity .3s ease, visibility 0s linear 0s; }
 
 /* fab */
 .fab{
@@ -447,19 +448,25 @@ function healthColor(){
 }
 function toast(msg, icon=ic.check){
   const t = document.getElementById("toast");
-  t.innerHTML = `<span style="width:20px;height:20px;color:#00C2A0;flex:0 0 auto">${icon}</span><span style="flex:1;">${msg}</span><span id="toastClose" style="width:16px;height:16px;flex:0 0 auto;cursor:pointer;opacity:.7;">${ic.plus.replace('viewBox="0 0 24 24"','viewBox="0 0 24 24" style="transform:rotate(45deg)"')}</span>`;
   clearTimeout(window._toastTimer);
+  clearTimeout(window._toastHideDisplay);
+  t.style.display = "flex";
+  void t.offsetWidth; /* force reflow */
+  t.innerHTML = `<span style="width:20px;height:20px;color:#00C2A0;flex:0 0 auto">${icon}</span><span style="flex:1;">${msg}</span><span id="toastClose" style="width:16px;height:16px;flex:0 0 auto;cursor:pointer;opacity:.7;">${ic.plus.replace('viewBox="0 0 24 24"','viewBox="0 0 24 24" style="transform:rotate(45deg)"')}</span>`;
   t.classList.remove("show");
-  void t.offsetWidth; /* force reflow so re-trigger animates even if already visible */
+  void t.offsetWidth;
   t.classList.add("show");
-  window._toastTimer = setTimeout(()=>{ t.classList.remove("show"); }, 3200);
+  window._toastTimer = setTimeout(()=> hideToast(), 3200);
   const closeBtn = document.getElementById("toastClose");
-  if(closeBtn) closeBtn.onclick = ()=>{ clearTimeout(window._toastTimer); t.classList.remove("show"); };
+  if(closeBtn) closeBtn.onclick = ()=> hideToast();
 }
 function hideToast(){
   clearTimeout(window._toastTimer);
+  clearTimeout(window._toastHideDisplay);
   const t = document.getElementById("toast");
-  if(t) t.classList.remove("show");
+  if(!t) return;
+  t.classList.remove("show");
+  window._toastHideDisplay = setTimeout(()=>{ t.style.display = "none"; }, 420);
 }
 
 /* ---- Number count-up micro-interaction ---- */
