@@ -1,0 +1,1512 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>TravelKu — myBCA Prototype</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;600;700&family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
+<style>
+:root{
+  --navy:#0A2540;
+  --blue:#1858E0;
+  --blue-light:#4A90FF;
+  --blue-deep:#0E3EA8;
+  --sky:#EEF4FF;
+  --sky2:#E3EDFF;
+  --mint:#00C2A0;
+  --mint-soft:#E3FBF6;
+  --gold:#E3A73C;
+  --gold-soft:#FCF2DF;
+  --coral:#FF5D68;
+  --coral-soft:#FFECEE;
+  --ink:#0F1A33;
+  --muted:#6C7793;
+  --muted2:#9AA5C0;
+  --line:#E7EDF9;
+  --white:#FFFFFF;
+  --radius-lg:28px;
+  --radius-md:20px;
+  --radius-sm:14px;
+  --shadow-sm:0 2px 8px rgba(15,26,51,0.06);
+  --shadow-md:0 10px 30px rgba(16,45,110,0.10);
+  --shadow-lg:0 20px 60px rgba(16,45,110,0.18);
+  --font-display:'Space Grotesk', sans-serif;
+  --font-body:'Inter', sans-serif;
+}
+*{box-sizing:border-box; margin:0; padding:0;}
+html,body{height:100%;}
+body{
+  font-family:var(--font-body);
+  color:var(--ink);
+  background:
+    radial-gradient(1200px 600px at 15% -10%, #E7F0FF 0%, transparent 60%),
+    radial-gradient(1000px 500px at 90% 10%, #E9FBF7 0%, transparent 55%),
+    linear-gradient(180deg,#F4F8FF 0%, #EEF2FB 100%);
+  min-height:100vh;
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  padding:40px 20px;
+  overflow-x:hidden;
+}
+.backdrop-caption{
+  position:fixed; top:24px; left:50%; transform:translateX(-50%);
+  font-family:var(--font-display); font-size:13px; letter-spacing:.14em; text-transform:uppercase;
+  color:var(--muted); font-weight:600; opacity:.75; z-index:5;
+}
+.stage{display:flex; align-items:flex-start; gap:56px; flex-wrap:wrap; justify-content:center;}
+.side-note{
+  width:230px; padding-top:70px; color:var(--muted); font-size:13px; line-height:1.6;
+}
+.side-note h4{font-family:var(--font-display); color:var(--ink); font-size:15px; margin-bottom:10px; letter-spacing:.01em;}
+.side-note .tag{
+  display:inline-block; background:var(--sky2); color:var(--blue-deep); font-weight:700; font-size:11px;
+  padding:4px 10px; border-radius:20px; margin-bottom:14px; letter-spacing:.04em;
+}
+.side-note ul{list-style:none; margin-top:10px;}
+.side-note li{padding:4px 0 4px 16px; position:relative;}
+.side-note li::before{content:"—"; position:absolute; left:0; color:var(--blue-light);}
+
+/* ===== Phone frame ===== */
+.phone{
+  width:390px; height:844px; background:var(--navy); border-radius:52px;
+  padding:14px; box-shadow: var(--shadow-lg), 0 0 0 2px rgba(255,255,255,.4) inset;
+  position:relative;
+}
+.phone-screen{
+  width:100%; height:100%; background:var(--white); border-radius:38px; overflow:hidden; position:relative;
+  display:flex; flex-direction:column;
+}
+.notch{
+  position:absolute; top:14px; left:50%; transform:translateX(-50%);
+  width:120px; height:28px; background:var(--navy); border-radius:0 0 18px 18px; z-index:50;
+}
+.statusbar{
+  height:52px; flex:0 0 auto; display:flex; align-items:flex-end; justify-content:space-between;
+  padding:0 26px 8px; font-size:13px; font-weight:700; color:var(--ink); z-index:20; position:relative;
+}
+.statusbar .icons{display:flex; gap:5px; align-items:center;}
+.statusbar svg{display:block;}
+
+.screen-viewport{flex:1 1 auto; position:relative; overflow:hidden;}
+.screen{
+  position:absolute; inset:0; overflow-y:auto; -ms-overflow-style:none; scrollbar-width:none;
+  animation: screenIn .42s cubic-bezier(.19,1,.22,1);
+  padding-bottom: 110px;
+}
+.screen::-webkit-scrollbar{display:none;}
+@keyframes screenIn{
+  from{opacity:0; transform:translateY(18px) scale(.99);}
+  to{opacity:1; transform:translateY(0) scale(1);}
+}
+.screen.slideleft{animation: slideLeftIn .4s cubic-bezier(.19,1,.22,1);}
+@keyframes slideLeftIn{from{opacity:0; transform:translateX(34px);} to{opacity:1; transform:translateX(0);}}
+
+/* ===== Bottom nav ===== */
+.bottomnav{
+  position:absolute; left:14px; right:14px; bottom:16px; height:70px;
+  background:rgba(255,255,255,.82); backdrop-filter:blur(18px);
+  border-radius:26px; box-shadow:var(--shadow-md);
+  display:flex; align-items:center; justify-content:space-around;
+  z-index:40; border:1px solid rgba(255,255,255,.6);
+}
+.navitem{
+  display:flex; flex-direction:column; align-items:center; gap:4px; color:var(--muted2);
+  font-size:10.5px; font-weight:700; cursor:pointer; transition:.25s; width:56px; position:relative;
+}
+.navitem svg{width:22px; height:22px; transition:.25s;}
+.navitem.active{color:var(--blue);}
+.navitem.active svg{transform:translateY(-2px);}
+.navitem .dot{
+  width:4px; height:4px; border-radius:50%; background:var(--blue); opacity:0; transition:.25s;
+  position:absolute; bottom:-8px;
+}
+.navitem.active .dot{opacity:1;}
+
+/* ===== Generic ===== */
+.px{padding-left:22px; padding-right:22px;}
+.h-display{font-family:var(--font-display); font-weight:700;}
+.eyebrow{
+  font-size:11px; font-weight:800; letter-spacing:.10em; text-transform:uppercase; color:var(--blue);
+}
+.btn{
+  border:none; cursor:pointer; font-family:var(--font-body); font-weight:700; font-size:14.5px;
+  border-radius:16px; padding:15px 20px; transition:.2s; display:inline-flex; align-items:center; justify-content:center; gap:8px;
+}
+.btn:active{transform:scale(.97);}
+.btn-primary{background:linear-gradient(135deg,var(--blue) 0%, var(--blue-deep) 100%); color:#fff; box-shadow:0 10px 24px rgba(24,88,224,.32);}
+.btn-primary:hover{box-shadow:0 14px 30px rgba(24,88,224,.4); transform:translateY(-1px);}
+.btn-ghost{background:var(--sky); color:var(--blue-deep);}
+.btn-ghost:hover{background:var(--sky2);}
+.btn-outline{background:transparent; border:1.5px solid var(--line); color:var(--ink);}
+.btn-block{width:100%;}
+.btn-sm{padding:9px 14px; font-size:12.5px; border-radius:12px;}
+.card{background:#fff; border-radius:var(--radius-md); box-shadow:var(--shadow-sm); border:1px solid var(--line); transition:transform .18s cubic-bezier(.19,1,.22,1), box-shadow .18s;}
+.card.tap:active{transform:scale(.97); box-shadow:0 4px 14px rgba(15,26,51,.08);}
+.num-count{display:inline-block;}
+@keyframes softPulse{0%,100%{opacity:1;}50%{opacity:.55;}}
+.pulse-dot{animation:softPulse 1.8s ease-in-out infinite;}
+.reminder-strip{display:flex; gap:10px; overflow-x:auto; padding-bottom:4px;}
+.reminder-chip{flex:0 0 auto; min-width:128px; background:#fff; border:1px solid var(--line); border-radius:16px; padding:11px 13px; cursor:pointer; transition:transform .18s;}
+.reminder-chip:active{transform:scale(.96);}
+.chip{
+  display:inline-flex; align-items:center; gap:6px; padding:9px 15px; border-radius:100px; font-size:13px; font-weight:700;
+  border:1.5px solid var(--line); color:var(--muted); cursor:pointer; transition:.18s; background:#fff; white-space:nowrap;
+}
+.chip.active{background:var(--blue); border-color:var(--blue); color:#fff; box-shadow:0 6px 16px rgba(24,88,224,.28);}
+.section-title{font-family:var(--font-display); font-weight:700; font-size:17px; letter-spacing:-.01em;}
+.muted{color:var(--muted);}
+.hidden{display:none !important;}
+.iconwrap{
+  width:44px; height:44px; border-radius:14px; display:flex; align-items:center; justify-content:center; flex:0 0 auto;
+}
+
+/* ===== Overlay / modal / popup ===== */
+.overlay{
+  position:absolute; inset:0; background:rgba(10,20,45,.5); backdrop-filter:blur(2px); z-index:100;
+  display:flex; align-items:flex-end; opacity:0; pointer-events:none; transition:opacity .3s;
+}
+.overlay.show{opacity:1; pointer-events:auto;}
+.sheet{
+  background:#fff; width:100%; border-radius:30px 30px 0 0; max-height:88%; overflow-y:auto;
+  transform:translateY(100%); transition:transform .42s cubic-bezier(.19,1,.22,1); padding:14px 22px 28px;
+  scrollbar-width:none;
+}
+.sheet::-webkit-scrollbar{display:none;}
+.overlay.show .sheet{transform:translateY(0);}
+.sheet-handle{width:40px; height:5px; border-radius:10px; background:var(--line); margin:6px auto 16px;}
+.overlay.center{align-items:center; justify-content:center; padding:24px;}
+.overlay.center .sheet{border-radius:26px; transform:scale(.85); max-height:none;}
+.overlay.center.show .sheet{transform:scale(1);}
+.close-x{
+  position:absolute; top:16px; right:20px; width:32px; height:32px; border-radius:50%; background:var(--sky);
+  display:flex; align-items:center; justify-content:center; cursor:pointer; z-index:5;
+}
+
+/* toast */
+.toast{
+  position:absolute; left:22px; right:22px; bottom:100px; background:var(--ink); color:#fff; padding:14px 18px;
+  border-radius:16px; font-size:13px; font-weight:600; display:flex; align-items:center; gap:10px; z-index:200;
+  transform:translateY(140%); transition:transform .4s cubic-bezier(.19,1,.22,1); box-shadow:var(--shadow-lg);
+}
+.toast.show{transform:translateY(0);}
+
+/* fab */
+.fab{
+  position:absolute; right:22px; bottom:96px; width:56px; height:56px; border-radius:20px;
+  background:linear-gradient(135deg,var(--blue),var(--blue-deep)); box-shadow:0 12px 26px rgba(24,88,224,.4);
+  display:flex; align-items:center; justify-content:center; cursor:pointer; z-index:35; transition:.2s;
+}
+.fab:active{transform:scale(.92);}
+
+::-webkit-scrollbar{width:0;}
+input,select{font-family:var(--font-body);}
+</style>
+</head>
+<body>
+
+<div class="backdrop-caption">TravelKu — a new myBCA feature · interactive prototype</div>
+
+<div class="stage">
+  <div class="side-note">
+    <span class="tag">PROTOTYPE</span>
+    <h4>Cara pakai</h4>
+    <p>Ini prototipe interaktif penuh — semua tombol berfungsi.</p>
+    <ul>
+      <li>Mulai dari layar myBCA Home, ketuk kartu <b>TravelKu</b></li>
+      <li>Lalui onboarding → atur trip</li>
+      <li>Jelajahi Wallet, Explore, Stats, More</li>
+      <li>Coba tambah pengeluaran — saldo & ring akan berubah live</li>
+    </ul>
+  </div>
+
+  <div class="phone">
+    <div class="phone-screen" id="phoneScreen">
+      <div class="notch"></div>
+      <div class="statusbar">
+        <span id="clock">09:41</span>
+        <div class="icons">
+          <svg width="17" height="11" viewBox="0 0 17 11" fill="none"><rect x="0" y="4" width="2.4" height="7" rx="1" fill="#0F1A33"/><rect x="4" y="2.5" width="2.4" height="8.5" rx="1" fill="#0F1A33"/><rect x="8" y="1" width="2.4" height="10" rx="1" fill="#0F1A33"/><rect x="12" y="0" width="2.4" height="11" rx="1" fill="#0F1A33"/></svg>
+          <svg width="16" height="12" viewBox="0 0 16 12" fill="none"><path d="M8 2.5C11 2.5 13.4 3.7 15 5.6L13.6 7C12.3 5.5 10.3 4.5 8 4.5C5.7 4.5 3.7 5.5 2.4 7L1 5.6C2.6 3.7 5 2.5 8 2.5Z" fill="#0F1A33"/><circle cx="8" cy="9.5" r="1.6" fill="#0F1A33"/></svg>
+          <svg width="25" height="12" viewBox="0 0 25 12" fill="none"><rect x="1" y="1" width="20" height="10" rx="2.5" stroke="#0F1A33" stroke-width="1.1"/><rect x="2.5" y="2.5" width="14" height="7" rx="1.2" fill="#0F1A33"/><rect x="22" y="4" width="2" height="4" rx="1" fill="#0F1A33"/></svg>
+        </div>
+      </div>
+      <div class="screen-viewport" id="viewport">
+        <!-- screens injected here -->
+      </div>
+      <div class="bottomnav hidden" id="bottomnav"></div>
+      <div class="fab hidden" id="fab"></div>
+      <div class="toast" id="toast"></div>
+
+      <!-- Overlays -->
+      <div class="overlay" id="overlayTripSetup"></div>
+      <div class="overlay center" id="overlayPromo"></div>
+      <div class="overlay" id="overlayAddExpense"></div>
+      <div class="overlay" id="overlaySplitBill"></div>
+      <div class="overlay" id="overlayNotif"></div>
+      <div class="overlay center" id="overlayToastCard"></div>
+    </div>
+  </div>
+
+  <div class="side-note">
+    <span class="tag">DESIGN</span>
+    <h4>Bahasa desain</h4>
+    <p>Biru premium khas perbankan, tipografi Space Grotesk + Inter, kartu membulat lembut, dan cincin progres animasi sebagai elemen ciri khas TravelKu.</p>
+    <h4 style="margin-top:18px;">Alur yang tersedia</h4>
+    <ul>
+      <li>Onboarding 4 layar</li>
+      <li>Setup trip & popup promo pintar</li>
+      <li>Wallet + pengeluaran harian (live)</li>
+      <li>Insight & statistik</li>
+      <li>Split bill</li>
+      <li>Explore destinasi + peta</li>
+      <li>Reward Center</li>
+      <li>Ringkasan perjalanan</li>
+      <li>Notifikasi & Mode Darurat</li>
+    </ul>
+  </div>
+</div>
+
+<script>
+/* =========================================================
+   ICONS (inline svg, stroke-based, consistent premium set)
+   ========================================================= */
+const ic = {
+  home:`<svg viewBox="0 0 24 24" fill="none"><path d="M4 11L12 4l8 7" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/><path d="M6 9.5V19a1 1 0 0 0 1 1h3v-5a2 2 0 1 1 4 0v5h3a1 1 0 0 0 1-1V9.5" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>`,
+  wallet:`<svg viewBox="0 0 24 24" fill="none"><rect x="3" y="6" width="18" height="13" rx="3" stroke="currentColor" stroke-width="2"/><path d="M3 10h18" stroke="currentColor" stroke-width="2"/><circle cx="16.5" cy="14" r="1.4" fill="currentColor"/></svg>`,
+  explore:`<svg viewBox="0 0 24 24" fill="none"><circle cx="12" cy="12" r="9" stroke="currentColor" stroke-width="2"/><path d="M15.5 8.5l-2 5-5 2 2-5 5-2z" stroke="currentColor" stroke-width="1.6" stroke-linejoin="round" fill="currentColor" fill-opacity=".08"/></svg>`,
+  stats:`<svg viewBox="0 0 24 24" fill="none"><path d="M4 20V10M12 20V4M20 20v-7" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"/></svg>`,
+  more:`<svg viewBox="0 0 24 24" fill="none"><circle cx="5" cy="12" r="1.8" fill="currentColor"/><circle cx="12" cy="12" r="1.8" fill="currentColor"/><circle cx="19" cy="12" r="1.8" fill="currentColor"/></svg>`,
+  bell:`<svg viewBox="0 0 24 24" fill="none"><path d="M6 9a6 6 0 1 1 12 0c0 4 1.5 5.5 1.5 5.5H4.5S6 13 6 9Z" stroke="currentColor" stroke-width="2" stroke-linejoin="round"/><path d="M10 18a2 2 0 0 0 4 0" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>`,
+  back:`<svg viewBox="0 0 24 24" fill="none"><path d="M15 19l-7-7 7-7" stroke="currentColor" stroke-width="2.3" stroke-linecap="round" stroke-linejoin="round"/></svg>`,
+  plane:`<svg viewBox="0 0 24 24" fill="none"><path d="M10.5 20.5l1.2-4.3 3.9-1.4-9.3-3 1-3.1 11 2.1 3-3a1.7 1.7 0 1 1 2.4 2.4l-3 3 2.1 11-3.1 1-3-9.3-1.4 3.9-4.3 1.2z" fill="currentColor"/></svg>`,
+  plus:`<svg viewBox="0 0 24 24" fill="none"><path d="M12 5v14M5 12h14" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"/></svg>`,
+  food:`<svg viewBox="0 0 24 24" fill="none"><path d="M7 3v7a2 2 0 0 0 2 2v9M4 3v7a1 1 0 0 0 1 1M10 3v7a1 1 0 0 1-1 1M17 3c-2 1-3 3-3 6a3 3 0 0 0 3 3v9" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg>`,
+  transport:`<svg viewBox="0 0 24 24" fill="none"><path d="M4 16V9a2 2 0 0 1 2-2h12a2 2 0 0 1 2 2v7" stroke="currentColor" stroke-width="1.8"/><rect x="3" y="16" width="18" height="3" rx="1.4" stroke="currentColor" stroke-width="1.8"/><circle cx="7.5" cy="19.5" r="1.4" fill="currentColor"/><circle cx="16.5" cy="19.5" r="1.4" fill="currentColor"/></svg>`,
+  shop:`<svg viewBox="0 0 24 24" fill="none"><path d="M6 8h12l-1 12H7L6 8Z" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"/><path d="M9 8V6a3 3 0 0 1 6 0v2" stroke="currentColor" stroke-width="1.8"/></svg>`,
+  hotel:`<svg viewBox="0 0 24 24" fill="none"><path d="M3 21V8l9-5 9 5v13" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"/><path d="M9 21v-6h6v6" stroke="currentColor" stroke-width="1.8"/></svg>`,
+  fun:`<svg viewBox="0 0 24 24" fill="none"><circle cx="12" cy="12" r="9" stroke="currentColor" stroke-width="1.8"/><path d="M9 10.5c.4-1 1.4-1.5 2.2-1M9 15c1 1 5 1 6 0" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/><circle cx="9" cy="10" r=".9" fill="currentColor"/><circle cx="15" cy="10" r=".9" fill="currentColor"/></svg>`,
+  check:`<svg viewBox="0 0 24 24" fill="none"><path d="M5 13l4 4L19 7" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"/></svg>`,
+  pin:`<svg viewBox="0 0 24 24" fill="none"><path d="M12 21s7-6.5 7-12A7 7 0 1 0 5 9c0 5.5 7 12 7 12Z" stroke="currentColor" stroke-width="1.8"/><circle cx="12" cy="9" r="2.4" stroke="currentColor" stroke-width="1.8"/></svg>`,
+  gift:`<svg viewBox="0 0 24 24" fill="none"><rect x="3" y="9" width="18" height="12" rx="1.5" stroke="currentColor" stroke-width="1.8"/><path d="M3 9h18v4H3zM12 9v12M12 9c-1-3-3-5-5-4s0 4 5 4Zm0 0c1-3 3-5 5-4s0 4-5 4Z" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"/></svg>`,
+  sos:`<svg viewBox="0 0 24 24" fill="none"><path d="M12 2v3M12 19v3M2 12h3M19 12h3M4.9 4.9l2.1 2.1M17 17l2.1 2.1M4.9 19.1L7 17M17 7l2.1-2.1" stroke="currentColor" stroke-width="2" stroke-linecap="round"/><circle cx="12" cy="12" r="4" stroke="currentColor" stroke-width="2"/></svg>`,
+  card:`<svg viewBox="0 0 24 24" fill="none"><rect x="2.5" y="5.5" width="19" height="13" rx="2.6" stroke="currentColor" stroke-width="1.8"/><path d="M2.5 10h19" stroke="currentColor" stroke-width="1.8"/></svg>`,
+  phone:`<svg viewBox="0 0 24 24" fill="none"><path d="M7 3h4l1 4-2 2c1 2 2.5 3.5 4.5 4.5l2-2 4 1v4c0 1-1 2-2 2C10.5 18.5 5.5 13.5 5 6c0-1 1-2 2-3Z" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"/></svg>`,
+  arrow:`<svg viewBox="0 0 24 24" fill="none"><path d="M5 12h14M13 6l6 6-6 6" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/></svg>`,
+  cloud:`<svg viewBox="0 0 24 24" fill="none"><path d="M7 17h10a4 4 0 0 0 0-8 5.5 5.5 0 0 0-10.6 1.6A3.5 3.5 0 0 0 7 17Z" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"/></svg>`,
+};
+
+/* =========================================================
+   STATE
+   ========================================================= */
+const CATS = {
+  food:{label:"Makan & Minum", color:"#FF9F5A", icon:ic.food},
+  transport:{label:"Transportasi", color:"#4A90FF", icon:ic.transport},
+  shop:{label:"Belanja", color:"#B784FF", icon:ic.shop},
+  hotel:{label:"Akomodasi", color:"#00C2A0", icon:ic.hotel},
+  fun:{label:"Hiburan", color:"#FF6B9E", icon:ic.fun},
+};
+const RATES = { IDR:1, USD:15750, EUR:17100, JPY:104.5, SGD:11650 };
+const SYM = { IDR:"Rp", USD:"$", EUR:"€", JPY:"¥", SGD:"S$" };
+
+let state = {
+  onboarded: false,
+  tripSet: false,
+  trip: { destination:"Bali", start:"2026-08-20", duration:5, type:"Couple", budget:8000000, currency:"IDR", companions:2 },
+  points: 24500,
+  currentDay: 1,
+  screen: "bcaHome",
+  expenses: [
+    { id:1, day:1, cat:"transport", amount:850000, time:"08:20", method:"QRIS", note:"Taksi bandara ke hotel" },
+    { id:2, day:1, cat:"hotel", amount:1450000, time:"13:00", method:"myBCA", note:"Check-in — 1 malam" },
+    { id:3, day:1, cat:"food", amount:225000, time:"19:30", method:"QRIS", note:"Makan malam di Jimbaran" },
+    { id:4, day:2, cat:"fun", amount:350000, time:"10:00", method:"Kartu Debit", note:"Tiket Tegallalang" },
+    { id:5, day:2, cat:"shop", amount:410000, time:"15:45", method:"QRIS", note:"Oleh-oleh Ubud Market" },
+  ],
+  notifications:[
+    {icon:"gift", title:"Cashback hari ini tersedia", body:"Dapatkan cashback 8% di merchant kuliner sekitar Anda.", time:"2m"},
+    {icon:"pin", title:"Promo merchant terdekat", body:"Diskon 20% di Kopi Sekawan, 150m dari lokasi Anda.", time:"25m"},
+    {icon:"wallet", title:"Peringatan anggaran", body:"Pengeluaran hari ini sudah 82% dari rata-rata harian.", time:"1j"},
+    {icon:"gift", title:"Reward menunggu ditukar", body:"24.500 poin siap ditukar voucher hotel.", time:"3j"},
+    {icon:"card", title:"Pengingat split bill", body:"Kevin belum membayar bagiannya untuk makan malam.", time:"5j"},
+    {icon:"pin", title:"Itinerary besok", body:"Kunjungan ke Tegallalang Rice Terrace pukul 09.00.", time:"1h"},
+  ],
+  cardFrozen:false,
+};
+
+function fmt(n, cur=state.trip.currency){
+  const v = cur==="IDR" ? n : n / RATES[cur];
+  const dec = cur==="IDR"||cur==="JPY" ? 0 : 2;
+  return SYM[cur] + " " + v.toLocaleString("en-US",{minimumFractionDigits:dec, maximumFractionDigits:dec});
+}
+function totalSpent(){ return state.expenses.reduce((s,e)=>s+e.amount,0); }
+function remaining(){ return state.trip.budget - totalSpent(); }
+function healthColor(){
+  const pct = totalSpent()/state.trip.budget;
+  if(pct < .6) return {c:"#00C2A0", label:"Sehat"};
+  if(pct < .9) return {c:"#E3A73C", label:"Waspada"};
+  return {c:"#FF5D68", label:"Boros"};
+}
+function toast(msg, icon=ic.check){
+  const t = document.getElementById("toast");
+  t.innerHTML = `<span style="width:20px;height:20px;color:#00C2A0;flex:0 0 auto">${icon}</span><span>${msg}</span>`;
+  t.classList.add("show");
+  clearTimeout(window._toastTimer);
+  window._toastTimer = setTimeout(()=>t.classList.remove("show"), 2600);
+}
+
+/* ---- Number count-up micro-interaction ---- */
+function animateCount(el, target, formatter, duration=900){
+  if(!el) return;
+  const start = 0;
+  const t0 = performance.now();
+  function tick(now){
+    const p = Math.min(1, (now-t0)/duration);
+    const eased = 1 - Math.pow(1-p, 3);
+    const val = start + (target-start)*eased;
+    el.textContent = formatter(val);
+    if(p<1) requestAnimationFrame(tick);
+    else el.textContent = formatter(target);
+  }
+  requestAnimationFrame(tick);
+}
+
+/* ---- Travel DNA: destination personality ---- */
+const DEST_DNA = {
+  "Bali":     { grad:"linear-gradient(120deg,#0B234F 0%, #164A94 60%, #1858E0 100%)", tagline:"Suasana pantai & budaya khas Bali", emoji:"🌊" },
+  "Jogja":    { grad:"linear-gradient(120deg,#5A3212 0%, #8A4F1E 55%, #C97A2E 100%)", tagline:"Hangatnya budaya Yogyakarta", emoji:"🏮" },
+  "Yogyakarta":{ grad:"linear-gradient(120deg,#5A3212 0%, #8A4F1E 55%, #C97A2E 100%)", tagline:"Hangatnya budaya Yogyakarta", emoji:"🏮" },
+  "Bandung":  { grad:"linear-gradient(120deg,#0E3B22 0%, #1B6B3E 55%, #2E9C5C 100%)", tagline:"Sejuknya nuansa hijau Bandung", emoji:"🌿" },
+  "Labuan Bajo":{ grad:"linear-gradient(120deg,#0B2A4A 0%, #0E6E7C 55%, #12A6A0 100%)", tagline:"Tropis mewah ala Labuan Bajo", emoji:"🐉" },
+};
+function destVibe(name){ return DEST_DNA[name] || { grad:"linear-gradient(120deg,#0B234F, #164A94 60%, #1858E0)", tagline:"Rencanakan perjalananmu dengan tenang", emoji:"✈️" }; }
+
+/* =========================================================
+   RENDER ROOT
+   ========================================================= */
+const viewport = document.getElementById("viewport");
+const bottomnav = document.getElementById("bottomnav");
+const fab = document.getElementById("fab");
+
+function setScreen(name, opts={}){
+  state.screen = name;
+  const el = document.createElement("div");
+  el.className = "screen" + (opts.slide?" slideleft":"");
+  el.innerHTML = SCREENS[name]();
+  viewport.innerHTML = "";
+  viewport.appendChild(el);
+  bindScreenEvents(name, el);
+  updateNav(name);
+  window.scrollTo(0,0);
+}
+
+const NAV_TABS = [
+  {id:"dashboard", label:"Home", icon:ic.home},
+  {id:"wallet", label:"Wallet", icon:ic.wallet},
+  {id:"explore", label:"Explore", icon:ic.explore},
+  {id:"stats", label:"Stats", icon:ic.stats},
+  {id:"more", label:"More", icon:ic.more},
+];
+function renderNav(){
+  bottomnav.innerHTML = NAV_TABS.map(t=>`
+    <div class="navitem ${state.screen===t.id?'active':''}" data-tab="${t.id}">
+      ${t.icon}<span>${t.label}</span><div class="dot"></div>
+    </div>`).join("");
+  bottomnav.querySelectorAll(".navitem").forEach(n=>{
+    n.onclick = ()=>{ setScreen(n.dataset.tab); };
+  });
+}
+function updateNav(name){
+  const inApp = ["dashboard","wallet","explore","stats","more","mapExplore","destination","rewards","summary","emergency"].includes(name);
+  bottomnav.classList.toggle("hidden", !inApp || ["mapExplore","destination","summary","emergency"].includes(name));
+  fab.classList.toggle("hidden", name!=="wallet");
+  if(inApp) renderNav();
+}
+fab.innerHTML = ic.plus;
+fab.onclick = ()=> openOverlay("overlayAddExpense", renderAddExpense);
+
+/* =========================================================
+   SCREENS
+   ========================================================= */
+const SCREENS = {};
+
+/* ---- myBCA Home (entry point) ---- */
+SCREENS.bcaHome = ()=>`
+<div class="px" style="padding-top:8px;">
+  <div style="display:flex; align-items:center; justify-content:space-between; margin-bottom:18px;">
+    <div style="display:flex; align-items:center; gap:10px;">
+      <div style="width:38px;height:38px;border-radius:12px;background:linear-gradient(135deg,var(--blue),var(--blue-deep));display:flex;align-items:center;justify-content:center;color:#fff;font-family:var(--font-display);font-weight:700;">B</div>
+      <div>
+        <div style="font-size:11px;color:var(--muted);font-weight:600;">Selamat pagi,</div>
+        <div style="font-size:15px;font-weight:800;">Alya Putri</div>
+      </div>
+    </div>
+    <div id="bellBtn" style="width:38px;height:38px;border-radius:12px;background:var(--sky);display:flex;align-items:center;justify-content:center;color:var(--blue-deep);cursor:pointer;position:relative;">
+      ${ic.bell.replace('width="24" height="24"','width="19" height="19"')}
+      <div style="position:absolute;top:7px;right:8px;width:7px;height:7px;border-radius:50%;background:var(--coral);border:1.5px solid #fff;"></div>
+    </div>
+  </div>
+
+  <div style="background:linear-gradient(135deg,#12306E 0%, #1858E0 55%, #2E7CF6 100%); border-radius:24px; padding:22px; color:#fff; position:relative; overflow:hidden; box-shadow:var(--shadow-md);">
+    <div style="position:absolute;right:-30px;top:-30px;width:130px;height:130px;border-radius:50%;background:rgba(255,255,255,.08);"></div>
+    <div style="position:absolute;right:20px;bottom:-40px;width:90px;height:90px;border-radius:50%;background:rgba(255,255,255,.06);"></div>
+    <div style="font-size:11.5px; opacity:.8; font-weight:600; letter-spacing:.02em;">Saldo Tahapan Xpresi</div>
+    <div class="h-display" style="font-size:26px; margin-top:6px; letter-spacing:-.01em;">Rp <span id="bcaBalance">0</span></div>
+    <div style="display:flex; gap:10px; margin-top:18px;">
+      <div style="background:rgba(255,255,255,.14); padding:8px 12px; border-radius:12px; font-size:11.5px; font-weight:700;">•••• 4471</div>
+      <div style="background:rgba(255,255,255,.14); padding:8px 12px; border-radius:12px; font-size:11.5px; font-weight:700;">myBCA Prioritas</div>
+    </div>
+  </div>
+
+  <div class="section-title" style="margin:22px 0 12px;">Fitur</div>
+  <div style="display:grid; grid-template-columns:repeat(4,1fr); gap:14px 8px;">
+    ${bcaFeatureIcon("Transfer", featIcon('<path d="M7 7h10M7 7l3-3M7 7l3 3M17 17H7M17 17l-3-3M17 17l-3 3" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/>'), false)}
+    ${bcaFeatureIcon("QRIS", featIcon('<rect x="4" y="4" width="6" height="6" stroke="currentColor" stroke-width="1.8"/><rect x="14" y="4" width="6" height="6" stroke="currentColor" stroke-width="1.8"/><rect x="4" y="14" width="6" height="6" stroke="currentColor" stroke-width="1.8"/><path d="M14 14h3v3h-3zM19 14v6M14 19h6" stroke="currentColor" stroke-width="1.8"/>'), false)}
+    ${bcaFeatureIcon("Top Up", featIcon('<circle cx="12" cy="12" r="9" stroke="currentColor" stroke-width="1.8"/><path d="M12 8v8M8 12h8" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/>'), false)}
+    ${bcaFeatureIcon("Tagihan", featIcon('<path d="M6 3h9l3 3v15H6z" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"/><path d="M9 10h6M9 13h6M9 16h4" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/>'), false)}
+    ${bcaFeatureIcon("Kartu", featIcon(ic.card.match(/<path.*?\/>|<rect.*?\/>/g).join('')), false)}
+    ${bcaFeatureIcon("Investasi", featIcon('<path d="M4 18l5-6 4 3 6-8" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/>'), false)}
+    ${bcaFeatureIcon("Asuransi", featIcon('<path d="M12 3l7 3v6c0 5-3 8-7 9-4-1-7-4-7-9V6z" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"/>'), false)}
+    ${bcaFeatureIcon("Lainnya", featIcon(ic.more.match(/<circle.*?\/>/g).join('')), false)}
+  </div>
+
+  <div style="display:flex;align-items:center;justify-content:space-between;margin:24px 0 12px;">
+    <div class="section-title">Baru untuk Anda</div>
+  </div>
+  <div id="travelkuTile" style="background:linear-gradient(120deg,#0B234F 0%, #12386E 45%, #0E7C68 130%); border-radius:24px; padding:20px; position:relative; overflow:hidden; cursor:pointer; box-shadow:0 16px 34px rgba(10,40,90,.28);">
+    <div style="position:absolute; right:-18px; top:-18px; width:120px;height:120px;border-radius:50%;background:rgba(255,255,255,.07);"></div>
+    <div style="position:absolute; right:30px; bottom:10px; opacity:.18; color:#fff; width:70px; height:70px; transform:rotate(20deg);">${ic.plane}</div>
+    <div style="display:inline-block;background:rgba(255,255,255,.16); color:#fff; font-size:10px; font-weight:800; letter-spacing:.06em; padding:4px 10px; border-radius:20px; margin-bottom:10px;">FITUR BARU</div>
+    <div class="h-display" style="color:#fff; font-size:21px;">TravelKu</div>
+    <div style="color:rgba(255,255,255,.78); font-size:12.5px; margin-top:4px; max-width:230px;">Your Travel Financial Companion — rencanakan, kelola, dan nikmati setiap perjalananmu.</div>
+    <div style="margin-top:16px; display:inline-flex; align-items:center; gap:6px; background:#fff; color:var(--blue-deep); font-weight:800; font-size:12.5px; padding:9px 16px; border-radius:12px;">
+      Coba sekarang <span style="width:14px;height:14px;">${ic.arrow}</span>
+    </div>
+  </div>
+
+  <div style="height:20px;"></div>
+</div>
+`;
+function featIcon(inner){ return `<svg viewBox="0 0 24 24" fill="none">${inner}</svg>`; }
+function bcaFeatureIcon(label, svg){
+  return `<div style="display:flex;flex-direction:column;align-items:center;gap:7px;">
+    <div class="iconwrap" style="background:var(--sky); color:var(--blue-deep); width:52px; height:52px; border-radius:16px;">${svg.replace(/width="24" height="24"/,'width="22" height="22"')}</div>
+    <div style="font-size:10.5px;font-weight:700;color:var(--ink);text-align:center;">${label}</div>
+  </div>`;
+}
+
+/* ---- Onboarding ---- */
+const ONB = [
+  { icon:ic.pin, title:"Rencanakan perjalanan lebih pintar", body:"Atur destinasi, tanggal, dan anggaran dalam hitungan detik — semua tersambung otomatis ke myBCA.", grad:"linear-gradient(135deg,#1858E0,#4A90FF)" },
+  { icon:ic.wallet, title:"Kelola setiap pengeluaran perjalanan", body:"Catat pengeluaran harian, pantau sisa anggaran, dan lihat prediksi pengeluaran akhir secara real-time.", grad:"linear-gradient(135deg,#0E7C68,#00C2A0)" },
+  { icon:ic.card, title:"Patungan jadi effortless", body:"Bagi tagihan dengan teman seperjalanan, kirim permintaan bayar, dan pantau status pembayaran.", grad:"linear-gradient(135deg,#B05AE8,#7C4FE0)" },
+  { icon:ic.gift, title:"Tukar reward, nikmati keuntungan BCA", body:"Kumpulkan poin dari transaksi perjalanan dan tukar dengan voucher hotel, tiket, hingga kuliner.", grad:"linear-gradient(135deg,#E3A73C,#FF8A5A)" },
+];
+let onbIndex = 0;
+SCREENS.onboarding = ()=>{
+  onbIndex = 0;
+  return `
+  <div style="height:100%; display:flex; flex-direction:column;">
+    <div style="display:flex; justify-content:flex-end; padding:14px 22px 0;">
+      <div id="skipBtn" style="font-size:13px; font-weight:700; color:var(--muted); cursor:pointer;">Lewati</div>
+    </div>
+    <div id="onbBody" style="flex:1; display:flex; align-items:center; justify-content:center; padding:0 30px;"></div>
+    <div style="display:flex; justify-content:center; gap:7px; margin-bottom:18px;" id="onbDots"></div>
+    <div class="px" style="padding-bottom:26px;">
+      <button class="btn btn-primary btn-block" id="onbNext">Lanjut</button>
+    </div>
+  </div>`;
+};
+function renderOnbSlide(){
+  const s = ONB[onbIndex];
+  document.getElementById("onbBody").innerHTML = `
+    <div style="text-align:center; animation:screenIn .5s cubic-bezier(.19,1,.22,1);">
+      <div style="width:132px;height:132px;border-radius:34px;background:${s.grad};display:flex;align-items:center;justify-content:center;margin:0 auto 30px;color:#fff;box-shadow:0 20px 40px rgba(20,50,110,.24);">
+        <span style="width:56px;height:56px;">${s.icon}</span>
+      </div>
+      <div class="eyebrow">LANGKAH ${onbIndex+1} DARI ${ONB.length}</div>
+      <div class="h-display" style="font-size:22px; margin-top:10px; line-height:1.3;">${s.title}</div>
+      <div class="muted" style="font-size:14px; margin-top:12px; line-height:1.55;">${s.body}</div>
+    </div>`;
+  document.getElementById("onbDots").innerHTML = ONB.map((_,i)=>`<div style="width:${i===onbIndex?22:7}px;height:7px;border-radius:6px;background:${i===onbIndex?'var(--blue)':'var(--line)'};transition:.3s;"></div>`).join("");
+  document.getElementById("onbNext").textContent = onbIndex===ONB.length-1 ? "Mulai Sekarang" : "Lanjut";
+}
+
+/* ---- Dashboard ---- */
+SCREENS.dashboard = ()=>{
+  const t = state.trip;
+  const days = Math.max(1,Math.ceil((new Date(t.start) - new Date("2026-08-15"))/86400000));
+  const vibe = destVibe(t.destination);
+  const rem = remaining();
+  const dailyAvg = totalSpent() / Math.max(1,state.currentDay);
+  const safeToday = Math.max(0, (t.budget/t.duration) - (state.expenses.filter(e=>e.day===state.currentDay).reduce((s,e)=>s+e.amount,0)));
+  return `
+  <div class="px" style="padding-top:6px;">
+    <div style="display:flex; align-items:center; justify-content:space-between; margin-bottom:16px;">
+      <div>
+        <div class="eyebrow">TRAVELKU</div>
+        <div class="h-display" style="font-size:19px; margin-top:2px;">Halo, Alya ✈️</div>
+      </div>
+      <div id="bellBtn2" style="width:38px;height:38px;border-radius:12px;background:var(--sky);display:flex;align-items:center;justify-content:center;color:var(--blue-deep);cursor:pointer;position:relative;">
+        ${ic.bell.replace('width="24" height="24"','width="19" height="19"')}
+        <div style="position:absolute;top:7px;right:8px;width:7px;height:7px;border-radius:50%;background:var(--coral);border:1.5px solid #fff;" class="pulse-dot"></div>
+      </div>
+    </div>
+
+    <div style="background:${vibe.grad}; border-radius:24px; padding:20px; color:#fff; position:relative; overflow:hidden; box-shadow:var(--shadow-md); transition:background 1.2s ease;">
+      <div style="position:absolute; right:-10px; bottom:-30px; width:150px; height:150px; border-radius:50%; background:rgba(255,255,255,.06);"></div>
+      <div style="display:flex; justify-content:space-between; align-items:flex-start;">
+        <div>
+          <div style="font-size:11px; opacity:.75; font-weight:700; letter-spacing:.04em;">TRIP AKTIF · ${vibe.emoji}</div>
+          <div class="h-display" style="font-size:22px; margin-top:4px;">${t.destination}</div>
+          <div style="font-size:11px; opacity:.75; margin-top:3px;">${vibe.tagline}</div>
+        </div>
+        <div style="text-align:right;">
+          <div style="font-size:10.5px; opacity:.7;">Keberangkatan dalam</div>
+          <div class="h-display" style="font-size:20px;">${days} hari</div>
+        </div>
+      </div>
+      <div style="display:flex; gap:10px; margin-top:18px;">
+        <div style="flex:1; background:rgba(255,255,255,.12); border-radius:14px; padding:10px 12px;">
+          <div style="font-size:10px; opacity:.7;">☀️ Cuaca</div>
+          <div style="font-weight:700; font-size:14px; margin-top:2px;">29° Cerah</div>
+        </div>
+        <div style="flex:1; background:rgba(255,255,255,.12); border-radius:14px; padding:10px 12px;">
+          <div style="font-size:10px; opacity:.7;">Sisa Anggaran</div>
+          <div style="font-weight:700; font-size:14px; margin-top:2px;" id="dashRemain">${fmt(0)}</div>
+        </div>
+        <div style="flex:1; background:rgba(255,255,255,.12); border-radius:14px; padding:10px 12px;">
+          <div style="font-size:10px; opacity:.7;">🏆 Poin</div>
+          <div style="font-weight:700; font-size:14px; margin-top:2px;" id="dashPoints">0</div>
+        </div>
+      </div>
+    </div>
+
+    <div style="display:flex; align-items:center; justify-content:space-between; margin:22px 0 12px;">
+      <div class="section-title">Hari Ini</div>
+      <div class="muted" style="font-size:11px; font-weight:700;">Hari ${state.currentDay} dari ${t.duration}</div>
+    </div>
+    <div class="reminder-strip">
+      <div class="reminder-chip" id="todaySafeCard">
+        <div style="font-size:17px;">💰</div>
+        <div style="font-weight:800; font-size:12px; margin-top:6px;">Aman Belanja</div>
+        <div class="muted" style="font-size:10.5px; margin-top:2px;">${fmt(safeToday)} lagi hari ini</div>
+      </div>
+      <div class="reminder-chip" data-action="splitEntry">
+        <div style="font-size:17px;">🧾</div>
+        <div style="font-weight:800; font-size:12px; margin-top:6px;">Split Bill</div>
+        <div class="muted" style="font-size:10.5px; margin-top:2px;">1 tagihan belum lunas</div>
+      </div>
+      <div class="reminder-chip" data-action="rewards">
+        <div style="font-size:17px;">🎁</div>
+        <div style="font-weight:800; font-size:12px; margin-top:6px;">Reward</div>
+        <div class="muted" style="font-size:10.5px; margin-top:2px;">${state.points.toLocaleString()} poin siap tukar</div>
+      </div>
+      <div class="reminder-chip">
+        <div style="font-size:17px;">🗓️</div>
+        <div style="font-weight:800; font-size:12px; margin-top:6px;">Booking</div>
+        <div class="muted" style="font-size:10.5px; margin-top:2px;">Hotel check-in besok</div>
+      </div>
+    </div>
+
+    <div style="display:flex; align-items:center; justify-content:space-between; margin:22px 0 12px;">
+      <div class="section-title">Itinerary Mendatang</div>
+      <div class="muted" style="font-size:12px; font-weight:700;">Lihat semua</div>
+    </div>
+    <div style="display:flex; flex-direction:column; gap:10px;">
+      ${itinItem("09:00", "Tegallalang Rice Terrace", "Ubud, Gianyar")}
+      ${itinItem("13:00", "Makan siang — Sari Organik", "Ubud")}
+      ${itinItem("16:30", "Tirta Empul Temple", "Tampaksiring")}
+    </div>
+
+    <div style="display:flex; align-items:center; justify-content:space-between; margin:22px 0 12px;">
+      <div class="section-title">Penawaran Terdekat</div>
+    </div>
+    <div style="display:flex; gap:12px; overflow-x:auto; padding-bottom:6px;">
+      ${offerCard("#FF9F5A","Kopi Sekawan","Cashback 20% via QRIS","150m")}
+      ${offerCard("#00C2A0","Bebek Bengil","Diskon 15% myBCA","400m")}
+      ${offerCard("#B784FF","Ubud Craft Market","Cashback 10%","800m")}
+    </div>
+    <div style="height:14px;"></div>
+  </div>`;
+};
+function itinItem(time,title,loc){
+  return `<div class="card" style="padding:13px 15px; display:flex; align-items:center; gap:13px;">
+    <div style="width:52px; text-align:center;">
+      <div style="font-family:var(--font-display); font-weight:700; font-size:13px; color:var(--blue-deep);">${time}</div>
+    </div>
+    <div style="width:1px; height:32px; background:var(--line);"></div>
+    <div style="flex:1;">
+      <div style="font-weight:700; font-size:13.5px;">${title}</div>
+      <div class="muted" style="font-size:11.5px; margin-top:2px;">📍 ${loc}</div>
+    </div>
+  </div>`;
+}
+function offerCard(color,title,desc,dist){
+  return `<div class="card" style="min-width:150px; padding:14px; flex:0 0 auto;">
+    <div style="width:100%; height:64px; border-radius:12px; background:linear-gradient(135deg,${color}33,${color}12); display:flex; align-items:center; justify-content:center; margin-bottom:10px;">
+      <span style="width:26px;height:26px;color:${color};">${ic.gift}</span>
+    </div>
+    <div style="font-weight:700; font-size:12.5px;">${title}</div>
+    <div class="muted" style="font-size:11px; margin-top:3px;">${desc}</div>
+    <div style="font-size:10.5px; color:var(--blue); font-weight:700; margin-top:6px;">📍 ${dist}</div>
+  </div>`;
+}
+
+/* ---- Wallet ---- */
+SCREENS.wallet = ()=>{
+  const spent = totalSpent(), budget = state.trip.budget, rem = remaining();
+  const pct = Math.min(1, spent/budget);
+  const days = state.trip.duration;
+  const dailyAvg = spent / state.currentDay;
+  const predicted = dailyAvg * days;
+  const h = healthColor();
+  const R = 74, C = 2*Math.PI*R;
+  const dash = C*pct;
+  const angle = -90 + pct*360;
+  const rad = angle*Math.PI/180;
+  const px = 90 + R*Math.cos(rad), py = 90 + R*Math.sin(rad);
+  return `
+  <div class="px" style="padding-top:6px;">
+    <div class="eyebrow">TRAVEL WALLET</div>
+    <div class="h-display" style="font-size:19px; margin:2px 0 18px;">Kesehatan Anggaran</div>
+
+    <div class="card" style="padding:22px; display:flex; flex-direction:column; align-items:center;">
+      <div style="position:relative; width:180px; height:180px;">
+        <svg width="180" height="180" viewBox="0 0 180 180">
+          <circle cx="90" cy="90" r="${R}" fill="none" stroke="#EEF2FB" stroke-width="14"/>
+          <circle id="budgetRing" cx="90" cy="90" r="${R}" fill="none" stroke="${h.c}" stroke-width="14" stroke-linecap="round"
+            stroke-dasharray="0 ${C}" data-dash="${dash}" data-c="${C}" transform="rotate(-90 90 90)"
+            style="transition:stroke-dasharray 1.1s cubic-bezier(.19,1,.22,1), stroke 1s;"/>
+          <g id="budgetMarker" style="transition:transform 1.1s cubic-bezier(.19,1,.22,1);" transform="translate(90 16)" data-angle="${angle}" data-px="${px}" data-py="${py}">
+            <circle r="12" fill="${h.c}"/>
+            <g transform="rotate(${angle+90}) scale(.55) translate(-12,-12)" fill="#fff">${ic.plane}</g>
+          </g>
+        </svg>
+        <div style="position:absolute; inset:0; display:flex; flex-direction:column; align-items:center; justify-content:center;">
+          <div style="font-size:10.5px; font-weight:700; color:${h.c}; letter-spacing:.04em;">${h.label.toUpperCase()}</div>
+          <div class="h-display" style="font-size:22px; margin-top:2px;"><span id="walletPct" data-target="${Math.round(pct*100)}">0</span>%</div>
+          <div class="muted" style="font-size:10px;">terpakai</div>
+        </div>
+      </div>
+
+      <div style="display:grid; grid-template-columns:1fr 1fr; gap:12px; width:100%; margin-top:20px;">
+        ${walletStat("Total Anggaran", fmt(budget))}
+        ${walletStat("Terpakai", fmt(spent))}
+        ${walletStat("Sisa", fmt(rem))}
+        ${walletStat("Rata-rata/Hari", fmt(dailyAvg))}
+      </div>
+      <div style="width:100%; margin-top:6px; background:var(--sky); border-radius:14px; padding:12px 14px; display:flex; justify-content:space-between; align-items:center;">
+        <div style="font-size:12px; font-weight:700; color:var(--blue-deep);">Prediksi Pengeluaran Akhir</div>
+        <div class="h-display" style="font-size:14px; color:var(--blue-deep);">${fmt(predicted)}</div>
+      </div>
+    </div>
+
+    <div style="display:flex; align-items:center; justify-content:space-between; margin:22px 0 10px;">
+      <div class="section-title">Multi Mata Uang</div>
+    </div>
+    <div style="display:flex; gap:8px; overflow-x:auto; padding-bottom:4px;">
+      ${["IDR","USD","EUR","JPY","SGD"].map(c=>`<div class="chip curbtn ${state.trip.currency===c?'active':''}" data-cur="${c}">${c}</div>`).join("")}
+    </div>
+    <div class="muted" style="font-size:11px; margin-top:8px;">Kurs indikatif: 1 ${state.trip.currency} ≈ ${state.trip.currency==="IDR"?"1":  (RATES[state.trip.currency]/RATES["IDR"]).toFixed(6)} IDR base-rate placeholder</div>
+
+    <div style="display:flex; align-items:center; justify-content:space-between; margin:22px 0 10px;">
+      <div class="section-title">Insight Cerdas</div>
+    </div>
+    <div style="display:flex; flex-direction:column; gap:10px;">
+      ${insightCard("💡", `Pengeluaran Anda ${pct<0.6?"masih di bawah":"mendekati"} rata-rata pelancong serupa di ${state.trip.destination}.`)}
+      ${insightCard("🍽️", `Kategori Makan & Minum menyumbang ${Math.round((sumCat('food')/spent)*100)||0}% dari total pengeluaran — sedikit lebih tinggi dari biasanya.`)}
+      ${insightCard("📆", `Dengan sisa anggaran saat ini, Anda masih aman untuk ${Math.max(0,Math.floor(rem/Math.max(dailyAvg,1)))} hari ke depan.`)}
+      ${insightCard("🚕", `Biaya transportasi hari ini lebih rendah dibanding rata-rata perjalananmu.`)}
+    </div>
+
+    <div style="display:flex; align-items:center; justify-content:space-between; margin:22px 0 10px;">
+      <div class="section-title">Pengeluaran Harian</div>
+      <div class="muted" style="font-size:12px; font-weight:700;" id="addExpBtnLink">+ Tambah</div>
+    </div>
+    ${renderDailyTimeline()}
+    <div style="height:16px;"></div>
+  </div>`;
+};
+function sumCat(cat){ return state.expenses.filter(e=>e.cat===cat).reduce((s,e)=>s+e.amount,0); }
+function walletStat(label, val){
+  return `<div style="background:var(--sky); border-radius:14px; padding:12px 14px;">
+    <div style="font-size:10.5px; color:var(--muted); font-weight:700;">${label}</div>
+    <div class="h-display" style="font-size:14.5px; margin-top:3px; color:var(--ink);">${val}</div>
+  </div>`;
+}
+function insightCard(emoji, text){
+  return `<div class="card" style="padding:13px 15px; display:flex; gap:12px; align-items:flex-start;">
+    <div style="font-size:20px;">${emoji}</div>
+    <div style="font-size:12.5px; line-height:1.5; color:var(--ink); font-weight:500;">${text}</div>
+  </div>`;
+}
+function renderDailyTimeline(){
+  const byDay = {};
+  state.expenses.forEach(e=>{ (byDay[e.day]=byDay[e.day]||[]).push(e); });
+  return Object.keys(byDay).sort().map(day=>{
+    const items = byDay[day];
+    const daySum = items.reduce((s,e)=>s+e.amount,0);
+    return `
+    <div style="margin-top:14px;">
+      <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:8px;">
+        <div style="font-weight:800; font-size:13px;">Hari ${day}</div>
+        <div class="muted" style="font-size:11.5px; font-weight:700;">${fmt(daySum)}</div>
+      </div>
+      <div style="display:flex; flex-direction:column; gap:8px;">
+        ${items.map(e=>{
+          const c = CATS[e.cat];
+          return `<div class="card" style="padding:11px 13px; display:flex; align-items:center; gap:11px;">
+            <div class="iconwrap" style="background:${c.color}18; color:${c.color}; width:38px; height:38px; border-radius:12px;">
+              ${c.icon.replace('width="24" height="24"','width="18" height="18"')}
+            </div>
+            <div style="flex:1; min-width:0;">
+              <div style="font-weight:700; font-size:12.5px;">${e.note}</div>
+              <div class="muted" style="font-size:10.5px; margin-top:2px;">${c.label} · ${e.time} · ${e.method}</div>
+            </div>
+            <div style="font-weight:800; font-size:12.5px; white-space:nowrap;">${fmt(e.amount)}</div>
+          </div>`;
+        }).join("")}
+      </div>
+    </div>`;
+  }).join("");
+}
+
+/* ---- Stats ---- */
+SCREENS.stats = ()=>{
+  return `
+  <div class="px" style="padding-top:6px;">
+    <div class="eyebrow">TRAVEL STATISTICS</div>
+    <div class="h-display" style="font-size:19px; margin:2px 0 18px;">Statistik Perjalanan</div>
+
+    <div class="card" style="padding:18px;">
+      <div style="font-weight:800; font-size:13px; margin-bottom:10px;">Pengeluaran per Kategori</div>
+      <div style="position:relative; height:200px;"><canvas id="chartDonut"></canvas></div>
+      <div style="display:flex; flex-wrap:wrap; gap:10px; margin-top:14px; justify-content:center;">
+        ${Object.entries(CATS).map(([k,c])=>`<div style="display:flex;align-items:center;gap:6px;font-size:11px;font-weight:700;color:var(--muted);">
+          <span style="width:9px;height:9px;border-radius:3px;background:${c.color};display:inline-block;"></span>${c.label}
+        </div>`).join("")}
+      </div>
+    </div>
+
+    <div class="card" style="padding:18px; margin-top:14px;">
+      <div style="font-weight:800; font-size:13px; margin-bottom:10px;">Pengeluaran Harian vs Anggaran</div>
+      <div style="position:relative; height:180px;"><canvas id="chartBar"></canvas></div>
+    </div>
+
+    <div class="card" style="padding:18px; margin-top:14px;">
+      <div style="font-weight:800; font-size:13px; margin-bottom:10px;">Perkiraan vs Anggaran Awal</div>
+      <div style="position:relative; height:170px;"><canvas id="chartForecast"></canvas></div>
+    </div>
+    <div style="height:16px;"></div>
+  </div>`;
+};
+function drawCharts(){
+  if(!document.getElementById("chartDonut")) return;
+  const entries = Object.entries(CATS).map(([k,c])=>({k,c,val:sumCat(k)}));
+  new Chart(document.getElementById("chartDonut"), {
+    type:"doughnut",
+    data:{ labels:entries.map(e=>e.c.label), datasets:[{data:entries.map(e=>e.val||0.0001), backgroundColor:entries.map(e=>e.c.color), borderWidth:0, hoverOffset:6}]},
+    options:{cutout:"68%", plugins:{legend:{display:false}, tooltip:{callbacks:{label:(ctx)=>fmt(ctx.raw)}}}, animation:{animateRotate:true, duration:1000}}
+  });
+  const byDay = {};
+  state.expenses.forEach(e=>{ byDay[e.day]=(byDay[e.day]||0)+e.amount; });
+  const days = [...Array(state.trip.duration)].map((_,i)=>i+1);
+  new Chart(document.getElementById("chartBar"), {
+    type:"bar",
+    data:{ labels:days.map(d=>"Hari "+d), datasets:[
+      {label:"Aktual", data:days.map(d=>byDay[d]||0), backgroundColor:"#1858E0", borderRadius:8, maxBarThickness:22},
+    ]},
+    options:{ plugins:{legend:{display:false}}, scales:{ y:{ grid:{color:"#EEF2FB"}, ticks:{callback:v=>Math.round(v/1000)+"K", font:{size:9}}}, x:{grid:{display:false}, ticks:{font:{size:9}}} }, animation:{duration:900} }
+  });
+  const budget = state.trip.budget;
+  const dailyTarget = budget/state.trip.duration;
+  let cum=0; const actualCum = days.map(d=>{cum+=(byDay[d]||0); return cum;});
+  const targetCum = days.map(d=>dailyTarget*d);
+  new Chart(document.getElementById("chartForecast"), {
+    type:"line",
+    data:{ labels:days.map(d=>"H"+d), datasets:[
+      {label:"Aktual", data:actualCum, borderColor:"#FF5D68", backgroundColor:"rgba(255,93,104,.08)", fill:true, tension:.35, pointRadius:3},
+      {label:"Anggaran", data:targetCum, borderColor:"#9AA5C0", borderDash:[5,5], pointRadius:0, tension:.1},
+    ]},
+    options:{ plugins:{legend:{position:"bottom", labels:{boxWidth:8, font:{size:10}}}}, scales:{ y:{grid:{color:"#EEF2FB"}, ticks:{callback:v=>Math.round(v/1000)+"K", font:{size:9}}}, x:{grid:{display:false}, ticks:{font:{size:9}}} }, animation:{duration:1000} }
+  });
+}
+
+/* ---- Explore (list) ---- */
+const DESTS = [
+  {name:"Ubud", tag:"Budaya & Alam", avg:1200000, dur:"2-3 hari", grad:"linear-gradient(135deg,#2E7D5B,#7FD8A0)"},
+  {name:"Seminyak", tag:"Pantai & Kuliner", avg:1800000, dur:"2 hari", grad:"linear-gradient(135deg,#1858E0,#4A90FF)"},
+  {name:"Nusa Penida", tag:"Petualangan", avg:900000, dur:"1 hari", grad:"linear-gradient(135deg,#0E7C68,#00C2A0)"},
+  {name:"Uluwatu", tag:"Pantai & Sunset", avg:750000, dur:"1 hari", grad:"linear-gradient(135deg,#B05AE8,#7C4FE0)"},
+];
+SCREENS.explore = ()=>`
+<div class="px" style="padding-top:6px;">
+  <div class="eyebrow">DESTINATION EXPLORER</div>
+  <div class="h-display" style="font-size:19px; margin:2px 0 16px;">Jelajahi ${state.trip.destination}</div>
+
+  <div id="openMapBtn" class="card tap" style="padding:16px; display:flex; align-items:center; gap:14px; cursor:pointer; background:linear-gradient(120deg,#EAF2FF,#E3FBF6); border:none;">
+    <div class="iconwrap" style="background:#fff; color:var(--blue-deep); width:46px; height:46px; border-radius:14px; box-shadow:var(--shadow-sm);">${ic.pin}</div>
+    <div style="flex:1;">
+      <div style="font-weight:800; font-size:13.5px;">Buka Peta Interaktif</div>
+      <div class="muted" style="font-size:11.5px;">Lihat destinasi, BCA terdekat & promo di peta</div>
+    </div>
+    <span style="width:16px;height:16px; color:var(--blue-deep);">${ic.arrow}</span>
+  </div>
+
+  <div style="display:flex; align-items:center; justify-content:space-between; margin:20px 0 12px;">
+    <div class="section-title">Destinasi Populer</div>
+  </div>
+  <div style="display:flex; flex-direction:column; gap:12px;">
+    ${DESTS.map((d,i)=>`
+    <div class="card tap destCard" data-idx="${i}" style="padding:12px; display:flex; gap:13px; cursor:pointer; align-items:center;">
+      <div style="width:76px; height:76px; border-radius:16px; background:${d.grad}; flex:0 0 auto; display:flex; align-items:center; justify-content:center; color:#fff; font-size:26px;">🏝️</div>
+      <div style="flex:1;">
+        <div style="font-weight:800; font-size:14px;">${d.name}</div>
+        <div class="muted" style="font-size:11.5px; margin-top:2px;">${d.tag} · ${d.dur}</div>
+        <div style="font-size:11.5px; font-weight:700; color:var(--blue-deep); margin-top:6px;">Rata-rata ${fmt(d.avg)}/hari</div>
+      </div>
+      <span style="width:16px;height:16px; color:var(--muted2);">${ic.arrow}</span>
+    </div>`).join("")}
+  </div>
+  <div style="height:16px;"></div>
+</div>`;
+
+/* ---- Map Explore ---- */
+SCREENS.mapExplore = ()=>`
+<div style="height:100%; display:flex; flex-direction:column;">
+  <div class="px" style="display:flex; align-items:center; gap:12px; padding-top:10px; padding-bottom:12px;">
+    <div id="backBtn" style="width:36px;height:36px;border-radius:12px;background:var(--sky);display:flex;align-items:center;justify-content:center;color:var(--blue-deep);cursor:pointer;">${ic.back.replace('width="24" height="24"','width="17" height="17"')}</div>
+    <div style="font-weight:800; font-size:15px;">Peta Interaktif</div>
+  </div>
+  <div style="flex:1; position:relative; margin:0 14px 14px; border-radius:24px; overflow:hidden; background:
+    radial-gradient(circle at 30% 30%, #CFE3FF, transparent 55%),
+    radial-gradient(circle at 75% 60%, #C7F2E7, transparent 50%),
+    linear-gradient(160deg,#E8F1FF,#DCEBFF 60%, #D7EFEA);">
+    <svg width="100%" height="100%" viewBox="0 0 340 500" style="position:absolute;inset:0;opacity:.5;">
+      <path d="M40 60 Q120 20 200 70 T320 90 Q300 180 250 220 T220 340 Q160 400 100 380 T40 300 Q10 200 40 60Z" fill="#BFD9FF" opacity=".5"/>
+      <path d="M60 400 Q140 430 220 410 T300 440" stroke="#9FC4FF" stroke-width="3" fill="none" opacity=".6"/>
+    </svg>
+    ${mapPin(90,150,"🏨","#1858E0","Hotel Anda")}
+    ${mapPin(180,110,"🍽️","#FF9F5A","Sari Organik")}
+    ${mapPin(230,220,"🛕","#00C2A0","Tirta Empul")}
+    ${mapPin(130,260,"🏧","#7C4FE0","BCA ATM")}
+    ${mapPin(260,320,"🏦","#0E3EA8","BCA Ubud")}
+    ${mapPin(70,340,"🎁","#E3A73C","Promo QRIS")}
+  </div>
+</div>`;
+function mapPin(x,y,emoji,color,label){
+  return `<div class="pinwrap" data-label="${label}" data-color="${color}" style="position:absolute; left:${x}px; top:${y}px; transform:translate(-50%,-100%); cursor:pointer;">
+    <div style="width:40px;height:40px;border-radius:14px 14px 14px 4px; background:${color}; display:flex;align-items:center;justify-content:center; font-size:18px; box-shadow:0 8px 18px ${color}55; transform:rotate(-45deg); animation:pinPulse 2.4s ease-in-out infinite;">
+      <span style="transform:rotate(45deg);">${emoji}</span>
+    </div>
+  </div>`;
+}
+
+/* ---- Destination detail ---- */
+SCREENS.destination = ()=>{
+  const d = DESTS[window._destIdx||0];
+  return `
+  <div style="position:relative;">
+    <div style="height:210px; background:${d.grad}; display:flex; align-items:flex-end; padding:18px; position:relative;">
+      <div id="backBtn" style="position:absolute; top:16px; left:18px; width:36px;height:36px;border-radius:12px;background:rgba(255,255,255,.22);backdrop-filter:blur(6px);display:flex;align-items:center;justify-content:center;color:#fff;cursor:pointer;">${ic.back.replace('width="24" height="24"','width="17" height="17"')}</div>
+      <div style="color:#fff;">
+        <div class="h-display" style="font-size:24px;">${d.name}</div>
+        <div style="font-size:12px; opacity:.85; margin-top:4px;">${d.tag} · ${d.dur}</div>
+      </div>
+    </div>
+    <div class="px" style="padding-top:18px;">
+      <p class="muted" style="font-size:13px; line-height:1.6;">${d.name} menawarkan pengalaman ${d.tag.toLowerCase()} yang cocok untuk pelancong yang ingin menikmati suasana khas Bali dengan ritme santai dan pemandangan memikat.</p>
+
+      <div class="section-title" style="margin:18px 0 10px;">Rekomendasi Kuliner</div>
+      <div style="display:flex; gap:10px; overflow-x:auto;">${["Sari Organik","Locavore","Warung Bu Oka"].map(f=>miniChip(f)).join("")}</div>
+
+      <div class="section-title" style="margin:18px 0 10px;">Rekomendasi Aktivitas</div>
+      <div style="display:flex; gap:10px; overflow-x:auto;">${["Rice Terrace","Monkey Forest","Yoga Retreat"].map(f=>miniChip(f)).join("")}</div>
+
+      <div style="display:grid; grid-template-columns:1fr 1fr; gap:12px; margin-top:18px;">
+        ${walletStat("Rata-rata Pengeluaran", fmt(d.avg)+"/hari")}
+        ${walletStat("Durasi Umum", d.dur)}
+      </div>
+
+      <div class="section-title" style="margin:20px 0 10px;">Fasilitas BCA Terdekat</div>
+      <div style="display:flex; flex-direction:column; gap:9px;">
+        ${nearItem("🏦","BCA KCP "+d.name,"1.2 km")}
+        ${nearItem("🏧","ATM BCA "+d.name+" Center","350 m")}
+        ${nearItem("📱","3 Merchant QRIS Terdekat","< 500 m")}
+      </div>
+      <div style="height:16px;"></div>
+    </div>
+  </div>`;
+};
+function miniChip(t){ return `<div class="chip" style="flex:0 0 auto;">${t}</div>`; }
+function nearItem(icon,title,dist){
+  return `<div class="card" style="padding:12px 14px; display:flex; align-items:center; gap:12px;">
+    <div style="font-size:18px;">${icon}</div>
+    <div style="flex:1; font-weight:700; font-size:12.5px;">${title}</div>
+    <div class="muted" style="font-size:11px; font-weight:700;">${dist}</div>
+  </div>`;
+}
+
+/* ---- Rewards ---- */
+const REWARDS = [
+  {icon:"🏨", title:"Voucher Hotel Rp200.000", cost:8000, color:"#1858E0"},
+  {icon:"✈️", title:"Voucher Tiket Pesawat Rp150.000", cost:12000, color:"#0E7C68"},
+  {icon:"🍽️", title:"Voucher Restoran Rp75.000", cost:4000, color:"#FF9F5A"},
+  {icon:"☕", title:"Voucher Kopi Gratis", cost:1500, color:"#B784FF"},
+  {icon:"🎟️", title:"Tiket Atraksi Wisata", cost:6000, color:"#E3A73C"},
+];
+SCREENS.rewards = ()=>`
+<div style="position:relative;">
+  <div style="background:linear-gradient(120deg,#12306E,#1858E0); padding:20px; padding-top:16px;">
+    <div style="display:flex; align-items:center; gap:12px; margin-bottom:16px;">
+      <div id="backBtn" style="width:36px;height:36px;border-radius:12px;background:rgba(255,255,255,.16);display:flex;align-items:center;justify-content:center;color:#fff;cursor:pointer;">${ic.back.replace('width="24" height="24"','width="17" height="17"')}</div>
+      <div style="color:#fff; font-weight:800; font-size:15px;">Reward Center</div>
+    </div>
+    <div style="color:#fff; text-align:center; padding:10px 0 4px;">
+      <div style="font-size:11px; opacity:.75; font-weight:700; letter-spacing:.04em;">TOTAL POIN BCA REWARD</div>
+      <div class="h-display" style="font-size:34px; margin-top:6px;" id="pointsBig">${state.points.toLocaleString()}</div>
+    </div>
+  </div>
+  <div class="px" style="padding-top:20px;">
+    <div class="section-title" style="margin-bottom:12px;">Tukar Poin</div>
+    <div style="display:flex; flex-direction:column; gap:11px;">
+      ${REWARDS.map((r,i)=>`
+      <div class="card" style="padding:13px; display:flex; align-items:center; gap:13px;">
+        <div style="width:48px;height:48px;border-radius:14px; background:${r.color}18; display:flex; align-items:center; justify-content:center; font-size:22px;">${r.icon}</div>
+        <div style="flex:1;">
+          <div style="font-weight:700; font-size:12.5px;">${r.title}</div>
+          <div style="font-size:11px; color:${r.color}; font-weight:800; margin-top:3px;">${r.cost.toLocaleString()} poin</div>
+        </div>
+        <button class="btn btn-sm redeemBtn" data-idx="${i}" style="background:${state.points>=r.cost?'var(--blue)':'var(--line)'}; color:${state.points>=r.cost?'#fff':'var(--muted2)'};">Tukar</button>
+      </div>`).join("")}
+    </div>
+    <div style="height:16px;"></div>
+  </div>
+</div>`;
+
+/* ---- Summary ---- */
+SCREENS.summary = ()=>{
+  const spent = totalSpent(), saved = state.trip.budget - spent;
+  return `
+  <div style="position:relative;">
+    <div style="background:linear-gradient(150deg,#0B234F,#12386E 50%,#0E7C68); padding:26px 22px 30px; text-align:center; position:relative;">
+      <div id="backBtn" style="position:absolute; top:16px; left:18px; width:36px;height:36px;border-radius:12px;background:rgba(255,255,255,.16);display:flex;align-items:center;justify-content:center;color:#fff;cursor:pointer;">${ic.back.replace('width="24" height="24"','width="17" height="17"')}</div>
+      <div style="font-size:36px; margin-top:10px;">🎉</div>
+      <div class="h-display" style="color:#fff; font-size:20px; margin-top:8px;">Ringkasan Perjalanan</div>
+      <div style="color:rgba(255,255,255,.75); font-size:12.5px; margin-top:4px;">${state.trip.destination} · ${state.trip.duration} hari</div>
+    </div>
+    <div class="px" style="padding-top:20px;">
+      <div style="display:grid; grid-template-columns:1fr 1fr; gap:12px;">
+        ${walletStat("Total Pengeluaran", fmt(spent))}
+        ${walletStat("Anggaran Tersisa", fmt(saved))}
+        ${walletStat("Tempat Dikunjungi", "6 lokasi")}
+        ${walletStat("Poin Reward Didapat", "+1.240")}
+      </div>
+
+      <div class="section-title" style="margin:20px 0 10px;">Rincian Pengeluaran</div>
+      <div style="position:relative; height:180px;"><canvas id="chartSummary"></canvas></div>
+
+      <div style="display:flex; gap:10px; margin-top:22px;">
+        <button class="btn btn-outline" style="flex:1;" id="shareBtn">Bagikan</button>
+        <button class="btn btn-primary" style="flex:1;" id="doneSummary">Selesai</button>
+      </div>
+      <div style="height:16px;"></div>
+    </div>
+  </div>`;
+};
+
+/* ---- More ---- */
+SCREENS.more = ()=>`
+<div class="px" style="padding-top:6px;">
+  <div class="eyebrow">MORE</div>
+  <div class="h-display" style="font-size:19px; margin:2px 0 18px;">Lainnya</div>
+  <div style="display:flex; flex-direction:column; gap:11px;">
+    ${moreItem("gift","rewards","Reward Center","Tukar poin dengan voucher perjalanan")}
+    ${moreItem("card","splitEntry","Split Bill","Bagi tagihan dengan teman perjalanan")}
+    ${moreItem("check","summary","Ringkasan Perjalanan","Lihat rekap trip yang sedang berjalan")}
+    ${moreItem("bell","notifOpen","Notifikasi","Pengingat & penawaran terbaru")}
+    ${moreItem("sos","emergency","Mode Darurat","Bantuan cepat saat perjalanan")}
+  </div>
+  <div style="height:16px;"></div>
+</div>`;
+function moreItem(icon,action,title,desc){
+  return `<div class="card tap moreBtn" data-action="${action}" style="padding:14px; display:flex; align-items:center; gap:13px; cursor:pointer;">
+    <div class="iconwrap" style="background:var(--sky); color:var(--blue-deep); width:44px; height:44px;">${ic[icon].replace('width="24" height="24"','width="20" height="20"')}</div>
+    <div style="flex:1;">
+      <div style="font-weight:800; font-size:13px;">${title}</div>
+      <div class="muted" style="font-size:11.5px; margin-top:2px;">${desc}</div>
+    </div>
+    <span style="width:15px;height:15px; color:var(--muted2);">${ic.arrow}</span>
+  </div>`;
+}
+
+/* ---- Emergency ---- */
+SCREENS.emergency = ()=>`
+<div style="position:relative;">
+  <div style="background:linear-gradient(120deg,#7A1F2B,#C23B3B); padding:20px; padding-top:16px;">
+    <div style="display:flex; align-items:center; gap:12px;">
+      <div id="backBtn" style="width:36px;height:36px;border-radius:12px;background:rgba(255,255,255,.18);display:flex;align-items:center;justify-content:center;color:#fff;cursor:pointer;">${ic.back.replace('width="24" height="24"','width="17" height="17"')}</div>
+      <div style="color:#fff; font-weight:800; font-size:15px;">Mode Darurat</div>
+    </div>
+    <div style="text-align:center; color:#fff; padding:18px 0 6px;">
+      <span style="width:44px;height:44px; display:inline-block;">${ic.sos}</span>
+      <div style="font-size:12px; opacity:.85; margin-top:8px; max-width:260px; margin-left:auto; margin-right:auto;">Bantuan cepat saat Anda mengalami situasi darurat di perjalanan.</div>
+    </div>
+  </div>
+  <div class="px" style="padding-top:20px;">
+    <div style="display:flex; flex-direction:column; gap:11px;">
+      <div class="card" style="padding:14px; display:flex; align-items:center; gap:13px;">
+        <div class="iconwrap" style="background:var(--coral-soft); color:var(--coral);">${ic.pin.replace('width="24" height="24"','width="20" height="20"')}</div>
+        <div style="flex:1;"><div style="font-weight:800; font-size:12.5px;">BCA Terdekat</div><div class="muted" style="font-size:11px;">BCA KCP Ubud — 1.2 km</div></div>
+        <button class="btn btn-sm btn-ghost">Arahkan</button>
+      </div>
+      <div class="card" style="padding:14px; display:flex; align-items:center; gap:13px;">
+        <div class="iconwrap" style="background:var(--sky); color:var(--blue);">${ic.card.replace('width="24" height="24"','width="20" height="20"')}</div>
+        <div style="flex:1;"><div style="font-weight:800; font-size:12.5px;">ATM Terdekat</div><div class="muted" style="font-size:11px;">ATM BCA Center — 350 m</div></div>
+        <button class="btn btn-sm btn-ghost">Arahkan</button>
+      </div>
+      <div class="card" style="padding:14px; display:flex; align-items:center; gap:13px;">
+        <div class="iconwrap" style="background:var(--gold-soft); color:var(--gold);">${ic.phone.replace('width="24" height="24"','width="20" height="20"')}</div>
+        <div style="flex:1;"><div style="font-weight:800; font-size:12.5px;">Kontak Darurat</div><div class="muted" style="font-size:11px;">Kevin Aditya · +62 812-xxxx-1122</div></div>
+        <button class="btn btn-sm btn-ghost">Hubungi</button>
+      </div>
+      <div class="card" style="padding:14px; display:flex; align-items:center; gap:13px;">
+        <div class="iconwrap" style="background:var(--coral-soft); color:var(--coral);">${ic.card.replace('width="24" height="24"','width="20" height="20"')}</div>
+        <div style="flex:1;"><div style="font-weight:800; font-size:12.5px;">Bekukan Kartu</div><div class="muted" style="font-size:11px;">${state.cardFrozen?'Kartu sedang dibekukan':'Kartu aktif normal'}</div></div>
+        <div id="freezeToggle" style="width:46px; height:26px; border-radius:20px; background:${state.cardFrozen?'var(--coral)':'var(--line)'}; position:relative; cursor:pointer; transition:.25s;">
+          <div style="width:20px; height:20px; border-radius:50%; background:#fff; position:absolute; top:3px; left:${state.cardFrozen?'23px':'3px'}; transition:.25s; box-shadow:0 2px 4px rgba(0,0,0,.2);"></div>
+        </div>
+      </div>
+      <div class="card" style="padding:14px; display:flex; align-items:center; gap:13px;">
+        <div class="iconwrap" style="background:var(--mint-soft); color:var(--mint);">${ic.phone.replace('width="24" height="24"','width="20" height="20"')}</div>
+        <div style="flex:1;"><div style="font-weight:800; font-size:12.5px;">Halo BCA</div><div class="muted" style="font-size:11px;">Layanan pelanggan 24 jam — 1500888</div></div>
+        <button class="btn btn-sm btn-primary">Panggil</button>
+      </div>
+    </div>
+    <div style="height:16px;"></div>
+  </div>
+</div>`;
+
+/* =========================================================
+   OVERLAYS
+   ========================================================= */
+function openOverlay(id, renderFn, mode){
+  const ov = document.getElementById(id);
+  if(renderFn) ov.innerHTML = renderFn();
+  ov.classList.add("show");
+  bindOverlayEvents(id);
+}
+function closeOverlay(id){ document.getElementById(id).classList.remove("show"); }
+
+/* Trip setup */
+let setupState = { destination:"Bali", start:"2026-08-20", duration:5, type:"Couple", budget:8000000, currency:"IDR", companions:2 };
+function renderTripSetup(){
+  return `<div class="sheet">
+    <div class="sheet-handle"></div>
+    <div class="h-display" style="font-size:18px; margin-bottom:4px;">Atur Perjalananmu</div>
+    <div class="muted" style="font-size:12.5px; margin-bottom:20px;">Isi detail trip agar TravelKu bisa menyesuaikan rekomendasi & anggaranmu.</div>
+
+    <label style="font-size:11.5px; font-weight:800; color:var(--muted); text-transform:uppercase; letter-spacing:.04em;">Destinasi</label>
+    <select id="inpDest" style="width:100%; margin-top:8px; margin-bottom:16px; padding:13px 14px; border-radius:14px; border:1.5px solid var(--line); font-size:14px; font-weight:600; background:#fff;">
+      ${["Bali","Yogyakarta","Labuan Bajo","Bandung","Lombok","Raja Ampat"].map(d=>`<option ${d===setupState.destination?'selected':''}>${d}</option>`).join("")}
+    </select>
+
+    <div style="display:flex; gap:12px;">
+      <div style="flex:1;">
+        <label style="font-size:11.5px; font-weight:800; color:var(--muted); text-transform:uppercase; letter-spacing:.04em;">Tanggal Berangkat</label>
+        <input id="inpDate" type="date" value="${setupState.start}" style="width:100%; margin-top:8px; margin-bottom:16px; padding:12px 12px; border-radius:14px; border:1.5px solid var(--line); font-size:13px; font-weight:600;">
+      </div>
+      <div style="flex:1;">
+        <label style="font-size:11.5px; font-weight:800; color:var(--muted); text-transform:uppercase; letter-spacing:.04em;">Durasi (hari)</label>
+        <input id="inpDur" type="number" min="1" max="30" value="${setupState.duration}" style="width:100%; margin-top:8px; margin-bottom:16px; padding:12px 12px; border-radius:14px; border:1.5px solid var(--line); font-size:13px; font-weight:600;">
+      </div>
+    </div>
+
+    <label style="font-size:11.5px; font-weight:800; color:var(--muted); text-transform:uppercase; letter-spacing:.04em;">Tipe Perjalanan</label>
+    <div style="display:flex; gap:8px; flex-wrap:wrap; margin-top:9px; margin-bottom:16px;">
+      ${["Solo","Couple","Family","Friends","Business"].map(t=>`<div class="chip typeChip ${t===setupState.type?'active':''}" data-type="${t}">${t}</div>`).join("")}
+    </div>
+
+    <div style="display:flex; gap:12px;">
+      <div style="flex:1.3;">
+        <label style="font-size:11.5px; font-weight:800; color:var(--muted); text-transform:uppercase; letter-spacing:.04em;">Anggaran</label>
+        <input id="inpBudget" type="number" step="100000" value="${setupState.budget}" style="width:100%; margin-top:8px; margin-bottom:16px; padding:12px 12px; border-radius:14px; border:1.5px solid var(--line); font-size:13px; font-weight:600;">
+      </div>
+      <div style="flex:1;">
+        <label style="font-size:11.5px; font-weight:800; color:var(--muted); text-transform:uppercase; letter-spacing:.04em;">Mata Uang</label>
+        <select id="inpCurrency" style="width:100%; margin-top:8px; margin-bottom:16px; padding:13px 12px; border-radius:14px; border:1.5px solid var(--line); font-size:13px; font-weight:600; background:#fff;">
+          ${["IDR","USD","EUR","JPY","SGD"].map(c=>`<option ${c===setupState.currency?'selected':''}>${c}</option>`).join("")}
+        </select>
+      </div>
+    </div>
+
+    <label style="font-size:11.5px; font-weight:800; color:var(--muted); text-transform:uppercase; letter-spacing:.04em;">Teman Perjalanan</label>
+    <div style="display:flex; align-items:center; gap:14px; margin-top:9px; margin-bottom:22px;">
+      <div id="compMinus" class="btn btn-ghost btn-sm" style="width:38px; height:38px; padding:0; border-radius:12px;">−</div>
+      <div class="h-display" style="font-size:16px; width:24px; text-align:center;" id="compCount">${setupState.companions}</div>
+      <div id="compPlus" class="btn btn-ghost btn-sm" style="width:38px; height:38px; padding:0; border-radius:12px;">+</div>
+      <div class="muted" style="font-size:12px;">orang lainnya</div>
+    </div>
+
+    <button class="btn btn-primary btn-block" id="continueSetup">Lanjutkan</button>
+  </div>`;
+}
+
+/* Promo popup */
+function renderPromo(){
+  return `<div class="sheet" style="border-radius:26px; text-align:center; padding:26px 24px 24px;">
+    <div style="width:70px;height:70px;border-radius:22px;background:linear-gradient(135deg,var(--blue),var(--mint));display:flex;align-items:center;justify-content:center;margin:0 auto 16px;color:#fff;box-shadow:0 14px 28px rgba(24,88,224,.3);">
+      <span style="width:32px;height:32px;">${ic.plane}</span>
+    </div>
+    <div class="h-display" style="font-size:19px;">Selamat datang di ${setupState.destination}! 🎉</div>
+    <div class="muted" style="font-size:12.5px; margin-top:8px; line-height:1.5;">Kami sudah siapkan rekomendasi khusus dan penawaran terbaik BCA untuk perjalananmu.</div>
+
+    <div style="text-align:left; margin-top:18px; display:flex; flex-direction:column; gap:9px;">
+      ${promoRow("🍽️","Restoran Rekomendasi","Sari Organik, Locavore, Bebek Bengil")}
+      ${promoRow("🎯","Atraksi Wajib Dikunjungi","Tegallalang, Tirta Empul, Uluwatu")}
+      ${promoRow("💳","Promo BCA Terdekat","Cashback QRIS 20% di 12 merchant")}
+      ${promoRow("🎁","Reward Redemption","Tukar poin untuk upgrade kamar hotel")}
+    </div>
+
+    <div style="display:flex; gap:10px; margin-top:22px;">
+      <button class="btn btn-outline" style="flex:1;" id="promoDismiss">Nanti Saja</button>
+      <button class="btn btn-primary" style="flex:1;" id="promoExplore">Jelajahi</button>
+    </div>
+  </div>`;
+}
+function promoRow(icon,title,desc){
+  return `<div style="display:flex; gap:11px; align-items:flex-start; background:var(--sky); padding:11px 13px; border-radius:14px;">
+    <div style="font-size:17px;">${icon}</div>
+    <div><div style="font-weight:800; font-size:12px;">${title}</div><div class="muted" style="font-size:11px; margin-top:2px;">${desc}</div></div>
+  </div>`;
+}
+
+/* Add expense */
+let newExp = { cat:"food", amount:"", method:"QRIS", note:"" };
+function renderAddExpense(){
+  newExp = { cat:"food", amount:"", method:"QRIS", note:"" };
+  return `<div class="sheet">
+    <div class="sheet-handle"></div>
+    <div class="h-display" style="font-size:18px; margin-bottom:16px;">Tambah Pengeluaran</div>
+
+    <label style="font-size:11.5px; font-weight:800; color:var(--muted); text-transform:uppercase; letter-spacing:.04em;">Kategori</label>
+    <div style="display:flex; gap:8px; flex-wrap:wrap; margin-top:9px; margin-bottom:16px;">
+      ${Object.entries(CATS).map(([k,c])=>`<div class="chip catChip ${k==='food'?'active':''}" data-cat="${k}">${c.label}</div>`).join("")}
+    </div>
+
+    <label style="font-size:11.5px; font-weight:800; color:var(--muted); text-transform:uppercase; letter-spacing:.04em;">Jumlah (IDR)</label>
+    <input id="inpAmount" type="number" placeholder="0" style="width:100%; margin-top:8px; margin-bottom:16px; padding:13px 14px; border-radius:14px; border:1.5px solid var(--line); font-size:16px; font-weight:700;">
+
+    <label style="font-size:11.5px; font-weight:800; color:var(--muted); text-transform:uppercase; letter-spacing:.04em;">Metode Pembayaran</label>
+    <div style="display:flex; gap:8px; flex-wrap:wrap; margin-top:9px; margin-bottom:16px;">
+      ${["QRIS","myBCA","Kartu Debit","Tunai"].map(m=>`<div class="chip methodChip ${m==='QRIS'?'active':''}" data-method="${m}">${m}</div>`).join("")}
+    </div>
+
+    <label style="font-size:11.5px; font-weight:800; color:var(--muted); text-transform:uppercase; letter-spacing:.04em;">Catatan</label>
+    <input id="inpNote" type="text" placeholder="cth: Makan siang di Ubud" style="width:100%; margin-top:8px; margin-bottom:22px; padding:13px 14px; border-radius:14px; border:1.5px solid var(--line); font-size:13.5px; font-weight:600;">
+
+    <button class="btn btn-primary btn-block" id="saveExpense">Simpan Pengeluaran</button>
+  </div>`;
+}
+
+/* Split bill */
+const FRIENDS = ["Kevin","Sarah","Dimas","Rani"];
+let splitState = { txId:null, mode:"equal", picked:[], method:"myBCA" };
+function renderSplitEntry(){
+  return `<div class="sheet">
+    <div class="sheet-handle"></div>
+    <div class="h-display" style="font-size:18px; margin-bottom:4px;">Split Bill</div>
+    <div class="muted" style="font-size:12.5px; margin-bottom:16px;">Pilih transaksi yang ingin dibagi.</div>
+    <div style="display:flex; flex-direction:column; gap:9px;">
+      ${state.expenses.slice(0,5).map(e=>{
+        const c = CATS[e.cat];
+        return `<div class="card tap splitTxItem" data-id="${e.id}" style="padding:12px 13px; display:flex; align-items:center; gap:11px; cursor:pointer;">
+          <div class="iconwrap" style="background:${c.color}18; color:${c.color}; width:38px; height:38px; border-radius:12px;">${c.icon.replace('width="24" height="24"','width="17" height="17"')}</div>
+          <div style="flex:1;"><div style="font-weight:700; font-size:12.5px;">${e.note}</div><div class="muted" style="font-size:10.5px;">Hari ${e.day} · ${e.time}</div></div>
+          <div style="font-weight:800; font-size:12.5px;">${fmt(e.amount)}</div>
+        </div>`;
+      }).join("")}
+    </div>
+  </div>`;
+}
+function renderSplitDetail(){
+  const tx = state.expenses.find(e=>e.id===splitState.txId);
+  const per = splitState.picked.length ? Math.round(tx.amount/(splitState.picked.length+1)) : tx.amount;
+  return `<div class="sheet">
+    <div class="sheet-handle"></div>
+    <div style="display:flex;align-items:center;gap:10px;margin-bottom:16px;">
+      <div id="splitBack" style="width:32px;height:32px;border-radius:10px;background:var(--sky);display:flex;align-items:center;justify-content:center;color:var(--blue-deep);cursor:pointer;">${ic.back.replace('width="24" height="24"','width="15" height="15"')}</div>
+      <div class="h-display" style="font-size:17px;">${tx.note}</div>
+    </div>
+    <div style="text-align:center; background:var(--sky); border-radius:16px; padding:16px; margin-bottom:18px;">
+      <div class="muted" style="font-size:11px; font-weight:700;">TOTAL TAGIHAN</div>
+      <div class="h-display" style="font-size:24px; margin-top:4px;">${fmt(tx.amount)}</div>
+    </div>
+
+    <label style="font-size:11.5px; font-weight:800; color:var(--muted); text-transform:uppercase;">Metode Split</label>
+    <div style="display:flex; gap:8px; margin-top:9px; margin-bottom:16px;">
+      <div class="chip splitModeChip ${splitState.mode==='equal'?'active':''}" data-mode="equal" style="flex:1; justify-content:center;">Rata (Equal)</div>
+      <div class="chip splitModeChip ${splitState.mode==='custom'?'active':''}" data-mode="custom" style="flex:1; justify-content:center;">Custom</div>
+    </div>
+
+    <label style="font-size:11.5px; font-weight:800; color:var(--muted); text-transform:uppercase;">Pilih Teman</label>
+    <div style="display:flex; flex-direction:column; gap:8px; margin-top:9px; margin-bottom:16px;">
+      ${FRIENDS.map(f=>`<div class="card tap friendItem" data-f="${f}" style="padding:11px 13px; display:flex; align-items:center; gap:11px; cursor:pointer; ${splitState.picked.includes(f)?'border-color:var(--blue); background:var(--sky);':''}">
+        <div style="width:32px;height:32px;border-radius:50%; background:linear-gradient(135deg,var(--blue-light),var(--blue)); color:#fff; display:flex; align-items:center; justify-content:center; font-weight:800; font-size:12px;">${f[0]}</div>
+        <div style="flex:1; font-weight:700; font-size:12.5px;">${f}</div>
+        <div style="font-size:11px; font-weight:700; color:var(--blue);">${splitState.picked.includes(f) ? fmt(per) : ''}</div>
+        <div style="width:20px;height:20px;border-radius:6px;border:1.5px solid ${splitState.picked.includes(f)?'var(--blue)':'var(--line)'}; background:${splitState.picked.includes(f)?'var(--blue)':'#fff'}; display:flex;align-items:center;justify-content:center; color:#fff;">${splitState.picked.includes(f)?ic.check.replace('width="24" height="24"','width="12" height="12"'):''}</div>
+      </div>`).join("")}
+    </div>
+
+    <label style="font-size:11.5px; font-weight:800; color:var(--muted); text-transform:uppercase;">Metode Pembayaran Diterima</label>
+    <div style="display:flex; gap:7px; flex-wrap:wrap; margin-top:9px; margin-bottom:20px;">
+      ${["myBCA","QRIS","DANA","GoPay","ShopeePay","Bank Lain"].map(m=>`<div class="chip splitPayChip ${m===splitState.method?'active':''}" data-m="${m}">${m}</div>`).join("")}
+    </div>
+
+    <button class="btn btn-primary btn-block" id="sendSplitReq" ${splitState.picked.length?'':'disabled style="opacity:.45;"'}>Kirim Permintaan Bayar</button>
+  </div>`;
+}
+function renderSplitSuccess(){
+  return `<div class="sheet" style="text-align:center; padding-top:30px;">
+    <div style="width:74px;height:74px;border-radius:50%;background:var(--mint-soft);display:flex;align-items:center;justify-content:center;margin:0 auto 16px;color:var(--mint);">
+      <span style="width:34px;height:34px;">${ic.check}</span>
+    </div>
+    <div class="h-display" style="font-size:18px;">Permintaan Terkirim!</div>
+    <div class="muted" style="font-size:12.5px; margin-top:6px;">Status pembayaran teman perjalananmu:</div>
+    <div style="display:flex; flex-direction:column; gap:8px; margin-top:16px; text-align:left;">
+      ${splitState.picked.map((f,i)=>`<div class="card" style="padding:11px 13px; display:flex; align-items:center; gap:11px;">
+        <div style="width:30px;height:30px;border-radius:50%; background:linear-gradient(135deg,var(--blue-light),var(--blue)); color:#fff; display:flex; align-items:center; justify-content:center; font-weight:800; font-size:11px;">${f[0]}</div>
+        <div style="flex:1; font-weight:700; font-size:12.5px;">${f}</div>
+        <div style="font-size:11px; font-weight:800; padding:4px 10px; border-radius:20px; background:${i===0?'var(--mint-soft)':'var(--gold-soft)'}; color:${i===0?'var(--mint)':'var(--gold)'};">${i===0?'Lunas':'Menunggu'}</div>
+      </div>`).join("")}
+    </div>
+    <button class="btn btn-primary btn-block" style="margin-top:22px;" id="splitDone">Selesai</button>
+  </div>`;
+}
+
+/* Notif panel */
+function renderNotif(){
+  return `<div class="sheet">
+    <div class="sheet-handle"></div>
+    <div class="h-display" style="font-size:18px; margin-bottom:16px;">Notifikasi</div>
+    <div style="display:flex; flex-direction:column; gap:9px;">
+      ${state.notifications.map(n=>`<div class="card" style="padding:12px 13px; display:flex; gap:11px; align-items:flex-start;">
+        <div class="iconwrap" style="background:var(--sky); color:var(--blue-deep); width:36px; height:36px; border-radius:11px;">${ic[n.icon].replace('width="24" height="24"','width="16" height="16"')}</div>
+        <div style="flex:1;">
+          <div style="font-weight:700; font-size:12.5px;">${n.title}</div>
+          <div class="muted" style="font-size:11px; margin-top:2px; line-height:1.4;">${n.body}</div>
+        </div>
+        <div class="muted" style="font-size:10px; white-space:nowrap;">${n.time}</div>
+      </div>`).join("")}
+    </div>
+  </div>`;
+}
+
+/* =========================================================
+   EVENT BINDING
+   ========================================================= */
+function bindScreenEvents(name, root){
+  if(name==="onboarding"){
+    renderOnbSlide();
+    root.querySelector("#skipBtn").onclick = finishOnboarding;
+    root.querySelector("#onbNext").onclick = ()=>{
+      if(onbIndex < ONB.length-1){ onbIndex++; renderOnbSlide(); }
+      else finishOnboarding();
+    };
+  }
+  if(name==="bcaHome"){
+    root.querySelector("#travelkuTile").onclick = ()=>{
+      if(!state.onboarded) setScreen("onboarding", {slide:true});
+      else if(!state.tripSet) { setScreen("dashboard"); openOverlay("overlayTripSetup", renderTripSetup); }
+      else setScreen("dashboard", {slide:true});
+    };
+    root.querySelector("#bellBtn").onclick = ()=> openOverlay("overlayNotif", renderNotif);
+    const balEl = root.querySelector("#bcaBalance"); if(balEl) animateCount(balEl, 18240500, v=>Math.round(v).toLocaleString("id-ID"));
+  }
+  if(["dashboard","wallet","explore","stats","more"].includes(name)) renderNav();
+  if(name==="dashboard"){
+    const b = root.querySelector("#bellBtn2"); if(b) b.onclick = ()=> openOverlay("overlayNotif", renderNotif);
+    root.querySelectorAll(".reminder-chip[data-action]").forEach(c=>{
+      c.onclick = ()=>{
+        const a = c.dataset.action;
+        if(a==="rewards") setScreen("rewards", {slide:true});
+        else if(a==="splitEntry"){ splitState = {txId:null, mode:"equal", picked:[], method:"myBCA"}; openOverlay("overlaySplitBill", renderSplitEntry); }
+      };
+    });
+    const remEl = root.querySelector("#dashRemain"); if(remEl) animateCount(remEl, remaining(), v=>fmt(Math.round(v)));
+    const ptsEl = root.querySelector("#dashPoints"); if(ptsEl) animateCount(ptsEl, state.points, v=>Math.round(v).toLocaleString());
+  }
+  if(name==="wallet"){
+    root.querySelectorAll(".curbtn").forEach(b=> b.onclick = ()=>{ state.trip.currency = b.dataset.cur; setScreen("wallet"); });
+    const lk = root.querySelector("#addExpBtnLink"); if(lk) lk.onclick = ()=> openOverlay("overlayAddExpense", renderAddExpense);
+    const ring = root.querySelector("#budgetRing"); const marker = root.querySelector("#budgetMarker");
+    if(ring){
+      const targetDash = ring.dataset.dash, targetC = ring.dataset.c, angle = +marker.dataset.angle, px = marker.dataset.px, py = marker.dataset.py;
+      requestAnimationFrame(()=> requestAnimationFrame(()=>{
+        ring.setAttribute("stroke-dasharray", `${targetDash} ${targetC}`);
+        marker.setAttribute("transform", `translate(${px} ${py})`);
+      }));
+    }
+    const pctEl = root.querySelector("#walletPct"); if(pctEl) animateCount(pctEl, +pctEl.dataset.target, v=>Math.round(v));
+  }
+  if(name==="stats") setTimeout(drawCharts, 50);
+  if(name==="explore"){
+    root.querySelectorAll(".destCard").forEach(c=> c.onclick = ()=>{ window._destIdx = +c.dataset.idx; setScreen("destination", {slide:true}); });
+    root.querySelector("#openMapBtn").onclick = ()=> setScreen("mapExplore", {slide:true});
+  }
+  if(name==="mapExplore"){
+    root.querySelector("#backBtn").onclick = ()=> setScreen("explore");
+    root.querySelectorAll(".pinwrap").forEach(p=>{
+      p.onclick = ()=> showMapPopup(p.dataset.label, p.dataset.color);
+    });
+  }
+  if(name==="destination"){
+    root.querySelector("#backBtn").onclick = ()=> setScreen("explore");
+  }
+  if(name==="rewards"){
+    root.querySelector("#backBtn").onclick = ()=> setScreen("more");
+    root.querySelectorAll(".redeemBtn").forEach(b=>{
+      b.onclick = ()=>{
+        const r = REWARDS[+b.dataset.idx];
+        if(state.points < r.cost){ toast("Poin tidak cukup untuk ditukar", ic.gift); return; }
+        state.points -= r.cost;
+        toast(`${r.title} berhasil ditukar!`);
+        setScreen("rewards");
+      };
+    });
+  }
+  if(name==="summary"){
+    root.querySelector("#backBtn").onclick = ()=> setScreen("more");
+    root.querySelector("#shareBtn").onclick = ()=> toast("Tautan ringkasan disalin ke clipboard", ic.check);
+    root.querySelector("#doneSummary").onclick = ()=> setScreen("dashboard");
+    setTimeout(()=>{
+      if(!document.getElementById("chartSummary")) return;
+      const entries = Object.entries(CATS).map(([k,c])=>({c,val:sumCat(k)}));
+      new Chart(document.getElementById("chartSummary"), {
+        type:"bar",
+        data:{ labels:entries.map(e=>e.c.label), datasets:[{data:entries.map(e=>e.val), backgroundColor:entries.map(e=>e.c.color), borderRadius:8, maxBarThickness:26}]},
+        options:{ indexAxis:'y', plugins:{legend:{display:false}}, scales:{x:{grid:{color:"#EEF2FB"}, ticks:{font:{size:9}}}, y:{grid:{display:false}, ticks:{font:{size:10, weight:700}}}}, animation:{duration:900} }
+      });
+    },50);
+  }
+  if(name==="more"){
+    root.querySelectorAll(".moreBtn").forEach(b=>{
+      b.onclick = ()=>{
+        const a = b.dataset.action;
+        if(a==="rewards") setScreen("rewards", {slide:true});
+        else if(a==="splitEntry"){ splitState = {txId:null, mode:"equal", picked:[], method:"myBCA"}; openOverlay("overlaySplitBill", renderSplitEntry); }
+        else if(a==="summary") setScreen("summary", {slide:true});
+        else if(a==="notifOpen") openOverlay("overlayNotif", renderNotif);
+        else if(a==="emergency") setScreen("emergency", {slide:true});
+      };
+    });
+  }
+  if(name==="emergency"){
+    root.querySelector("#backBtn").onclick = ()=> setScreen("more");
+    root.querySelector("#freezeToggle").onclick = ()=>{ state.cardFrozen = !state.cardFrozen; setScreen("emergency"); toast(state.cardFrozen?"Kartu berhasil dibekukan":"Kartu diaktifkan kembali"); };
+  }
+}
+
+function showMapPopup(label,color){
+  const el = document.getElementById("overlayPromo");
+  el.innerHTML = `<div class="sheet" style="border-radius:24px; text-align:center; padding:24px;">
+    <div style="width:56px;height:56px;border-radius:18px;background:${color}18;color:${color};display:flex;align-items:center;justify-content:center;margin:0 auto 14px;">${ic.pin.replace('width="24" height="24"','width="26" height="26"')}</div>
+    <div class="h-display" style="font-size:16px;">${label}</div>
+    <div class="muted" style="font-size:12px; margin-top:6px;">Estimasi jarak 250m dari lokasi Anda saat ini. Tersedia promo cashback khusus pengguna myBCA.</div>
+    <button class="btn btn-primary btn-block" style="margin-top:18px;" id="closeMapPop">Tutup</button>
+  </div>`;
+  el.classList.add("show");
+  el.querySelector("#closeMapPop").onclick = ()=> el.classList.remove("show");
+  el.onclick = (e)=>{ if(e.target===el) el.classList.remove("show"); };
+}
+
+function bindOverlayEvents(id){
+  const el = document.getElementById(id);
+  el.onclick = (e)=>{ if(e.target===el) closeOverlay(id); };
+
+  if(id==="overlayTripSetup"){
+    el.querySelectorAll(".typeChip").forEach(c=> c.onclick = ()=>{ setupState.type=c.dataset.type; el.querySelectorAll(".typeChip").forEach(x=>x.classList.remove("active")); c.classList.add("active"); });
+    el.querySelector("#compMinus").onclick = ()=>{ setupState.companions=Math.max(0,setupState.companions-1); el.querySelector("#compCount").textContent=setupState.companions; };
+    el.querySelector("#compPlus").onclick = ()=>{ setupState.companions=Math.min(12,setupState.companions+1); el.querySelector("#compCount").textContent=setupState.companions; };
+    el.querySelector("#continueSetup").onclick = ()=>{
+      setupState.destination = el.querySelector("#inpDest").value;
+      setupState.start = el.querySelector("#inpDate").value || setupState.start;
+      setupState.duration = +el.querySelector("#inpDur").value || 5;
+      setupState.budget = +el.querySelector("#inpBudget").value || 8000000;
+      setupState.currency = el.querySelector("#inpCurrency").value;
+      state.trip = {...setupState};
+      state.tripSet = true;
+      state.expenses = state.expenses.map(e=>e); // keep demo expenses
+      closeOverlay("overlayTripSetup");
+      setScreen("dashboard");
+      setTimeout(()=> openOverlay("overlayPromo", renderPromo), 380);
+    };
+  }
+  if(id==="overlayPromo"){
+    const dismiss = el.querySelector("#promoDismiss");
+    const explore = el.querySelector("#promoExplore");
+    if(dismiss) dismiss.onclick = ()=> closeOverlay("overlayPromo");
+    if(explore) explore.onclick = ()=>{ closeOverlay("overlayPromo"); setScreen("explore", {slide:true}); };
+  }
+  if(id==="overlayAddExpense"){
+    el.querySelectorAll(".catChip").forEach(c=> c.onclick = ()=>{ newExp.cat=c.dataset.cat; el.querySelectorAll(".catChip").forEach(x=>x.classList.remove("active")); c.classList.add("active"); });
+    el.querySelectorAll(".methodChip").forEach(c=> c.onclick = ()=>{ newExp.method=c.dataset.method; el.querySelectorAll(".methodChip").forEach(x=>x.classList.remove("active")); c.classList.add("active"); });
+    el.querySelector("#saveExpense").onclick = ()=>{
+      const amt = +el.querySelector("#inpAmount").value;
+      if(!amt || amt<=0){ toast("Masukkan jumlah pengeluaran terlebih dahulu", ic.wallet); return; }
+      const note = el.querySelector("#inpNote").value || CATS[newExp.cat].label;
+      state.expenses.push({ id:Date.now(), day:state.currentDay, cat:newExp.cat, amount:amt, time:new Date().toTimeString().slice(0,5), method:newExp.method, note });
+      closeOverlay("overlayAddExpense");
+      toast("Pengeluaran berhasil dicatat");
+      setScreen("wallet");
+    };
+  }
+  if(id==="overlaySplitBill"){
+    el.querySelectorAll(".splitTxItem").forEach(t=> t.onclick = ()=>{
+      splitState.txId = +t.dataset.id; splitState.picked=[];
+      el.innerHTML = renderSplitDetail(); bindOverlayEvents(id);
+    });
+    const back = el.querySelector("#splitBack");
+    if(back) back.onclick = ()=>{ el.innerHTML = renderSplitEntry(); bindOverlayEvents(id); };
+    el.querySelectorAll(".splitModeChip").forEach(c=> c.onclick = ()=>{ splitState.mode=c.dataset.mode; el.innerHTML=renderSplitDetail(); bindOverlayEvents(id); });
+    el.querySelectorAll(".friendItem").forEach(f=> f.onclick = ()=>{
+      const name=f.dataset.f;
+      if(splitState.picked.includes(name)) splitState.picked=splitState.picked.filter(x=>x!==name);
+      else splitState.picked.push(name);
+      el.innerHTML = renderSplitDetail(); bindOverlayEvents(id);
+    });
+    el.querySelectorAll(".splitPayChip").forEach(c=> c.onclick = ()=>{ splitState.method=c.dataset.m; el.innerHTML=renderSplitDetail(); bindOverlayEvents(id); });
+    const send = el.querySelector("#sendSplitReq");
+    if(send) send.onclick = ()=>{ if(!splitState.picked.length) return; el.innerHTML = renderSplitSuccess(); bindOverlayEvents(id); };
+    const done = el.querySelector("#splitDone");
+    if(done) done.onclick = ()=> closeOverlay("overlaySplitBill");
+  }
+}
+
+function finishOnboarding(){
+  state.onboarded = true;
+  setScreen("dashboard");
+  openOverlay("overlayTripSetup", renderTripSetup);
+}
+
+/* clock */
+function tickClock(){
+  const d = new Date();
+  document.getElementById("clock").textContent = d.toTimeString().slice(0,5);
+}
+tickClock(); setInterval(tickClock, 30000);
+
+/* pin pulse keyframes injected */
+const styleTag = document.createElement("style");
+styleTag.textContent = `@keyframes pinPulse{0%,100%{transform:rotate(-45deg) translateY(0);}50%{transform:rotate(-45deg) translateY(-5px);}}`;
+document.head.appendChild(styleTag);
+
+/* init */
+setScreen("bcaHome");
+</script>
+</body>
+</html>
