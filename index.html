@@ -73,12 +73,7 @@ body{
   padding-bottom:env(safe-area-inset-bottom);
 }
 .notch{ display:none; }
-.statusbar{
-  height:52px; flex:0 0 auto; display:flex; align-items:flex-end; justify-content:space-between;
-  padding:0 26px 8px; font-size:13px; font-weight:700; color:var(--ink); z-index:20; position:relative;
-}
-.statusbar .icons{display:flex; gap:5px; align-items:center;}
-.statusbar svg{display:block;}
+.topspacer{ height:10px; flex:0 0 auto; }
 
 .screen-viewport{flex:1 1 auto; position:relative; overflow:hidden;}
 .screen{
@@ -290,14 +285,7 @@ input,select{font-family:var(--font-body);}
   <div class="phone">
     <div class="phone-screen" id="phoneScreen">
       <div class="notch"></div>
-      <div class="statusbar">
-        <span id="clock">09:41</span>
-        <div class="icons">
-          <svg width="17" height="11" viewBox="0 0 17 11" fill="none"><rect x="0" y="4" width="2.4" height="7" rx="1" fill="#0F1A33"/><rect x="4" y="2.5" width="2.4" height="8.5" rx="1" fill="#0F1A33"/><rect x="8" y="1" width="2.4" height="10" rx="1" fill="#0F1A33"/><rect x="12" y="0" width="2.4" height="11" rx="1" fill="#0F1A33"/></svg>
-          <svg width="16" height="12" viewBox="0 0 16 12" fill="none"><path d="M8 2.5C11 2.5 13.4 3.7 15 5.6L13.6 7C12.3 5.5 10.3 4.5 8 4.5C5.7 4.5 3.7 5.5 2.4 7L1 5.6C2.6 3.7 5 2.5 8 2.5Z" fill="#0F1A33"/><circle cx="8" cy="9.5" r="1.6" fill="#0F1A33"/></svg>
-          <svg width="25" height="12" viewBox="0 0 25 12" fill="none"><rect x="1" y="1" width="20" height="10" rx="2.5" stroke="#0F1A33" stroke-width="1.1"/><rect x="2.5" y="2.5" width="14" height="7" rx="1.2" fill="#0F1A33"/><rect x="22" y="4" width="2" height="4" rx="1" fill="#0F1A33"/></svg>
-        </div>
-      </div>
+      <div class="topspacer"></div>
       <div class="screen-viewport" id="viewport">
         <!-- screens injected here -->
       </div>
@@ -460,11 +448,18 @@ function healthColor(){
 function toast(msg, icon=ic.check){
   const t = document.getElementById("toast");
   t.innerHTML = `<span style="width:20px;height:20px;color:#00C2A0;flex:0 0 auto">${icon}</span><span style="flex:1;">${msg}</span><span id="toastClose" style="width:16px;height:16px;flex:0 0 auto;cursor:pointer;opacity:.7;">${ic.plus.replace('viewBox="0 0 24 24"','viewBox="0 0 24 24" style="transform:rotate(45deg)"')}</span>`;
-  t.classList.add("show");
   clearTimeout(window._toastTimer);
-  window._toastTimer = setTimeout(()=>t.classList.remove("show"), 2600);
+  t.classList.remove("show");
+  void t.offsetWidth; /* force reflow so re-trigger animates even if already visible */
+  t.classList.add("show");
+  window._toastTimer = setTimeout(()=>{ t.classList.remove("show"); }, 3200);
   const closeBtn = document.getElementById("toastClose");
   if(closeBtn) closeBtn.onclick = ()=>{ clearTimeout(window._toastTimer); t.classList.remove("show"); };
+}
+function hideToast(){
+  clearTimeout(window._toastTimer);
+  const t = document.getElementById("toast");
+  if(t) t.classList.remove("show");
 }
 
 /* ---- Number count-up micro-interaction ---- */
@@ -501,6 +496,7 @@ const bottomnav = document.getElementById("bottomnav");
 const fab = document.getElementById("fab");
 
 function setScreen(name, opts={}){
+  hideToast();
   state.screen = name;
   const el = document.createElement("div");
   el.className = "screen" + (opts.slide?" slideleft":"");
@@ -1799,12 +1795,6 @@ function finishOnboarding(){
   openOverlay("overlayTripSetup", renderTripSetup);
 }
 
-/* clock */
-function tickClock(){
-  const d = new Date();
-  document.getElementById("clock").textContent = d.toTimeString().slice(0,5);
-}
-tickClock(); setInterval(tickClock, 30000);
 
 /* pin pulse keyframes injected */
 const styleTag = document.createElement("style");
