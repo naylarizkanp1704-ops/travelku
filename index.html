@@ -6,7 +6,9 @@
 <title>TravelKu — myBCA Prototype</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;600;700&family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<link href="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.css" rel="stylesheet">
 <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.js"></script>
 <style>
 :root{
   --navy:#0A2540;
@@ -494,6 +496,26 @@ const DEST_DNA = {
   "Labuan Bajo":{ grad:"linear-gradient(120deg,#0B2A4A 0%, #0E6E7C 55%, #12A6A0 100%)", tagline:"Tropis mewah ala Labuan Bajo", emoji:"🐉" },
 };
 function destVibe(name){ return DEST_DNA[name] || { grad:"linear-gradient(120deg,#0B234F, #164A94 60%, #1858E0)", tagline:"Rencanakan perjalananmu dengan tenang", emoji:"✈️" }; }
+
+/* ---- Real-world coordinates for the interactive map ---- */
+const DEST_COORDS = {
+  "Bali": [-8.5069, 115.2625],
+  "Yogyakarta": [-7.7956, 110.3695],
+  "Jogja": [-7.7956, 110.3695],
+  "Bandung": [-6.9175, 107.6191],
+  "Labuan Bajo": [-8.4901, 119.8877],
+  "Lombok": [-8.6500, 116.3249],
+  "Raja Ampat": [-0.5, 130.5],
+};
+function destCoords(name){ return DEST_COORDS[name] || DEST_COORDS["Bali"]; }
+const MAP_POI_OFFSETS = [
+  { dx:0,      dy:0,      emoji:"🏨", color:"#1858E0", label:"Hotel Anda" },
+  { dx:0.0045, dy:0.006,  emoji:"🍽️", color:"#FF9F5A", label:"Sari Organik" },
+  { dx:-0.006, dy:0.011,  emoji:"🛕", color:"#00C2A0", label:"Tirta Empul" },
+  { dx:0.008,  dy:-0.004, emoji:"🏧", color:"#7C4FE0", label:"BCA ATM" },
+  { dx:-0.003, dy:-0.009, emoji:"🏦", color:"#0E3EA8", label:"BCA Ubud" },
+  { dx:-0.009, dy:0.003,  emoji:"🎁", color:"#E3A73C", label:"Promo QRIS" },
+];
 
 /* =========================================================
    RENDER ROOT
@@ -1017,28 +1039,33 @@ SCREENS.mapExplore = ()=>`
     <div id="backBtn" style="width:36px;height:36px;border-radius:12px;background:var(--sky);display:flex;align-items:center;justify-content:center;color:var(--blue-deep);cursor:pointer;">${ic.back.replace('width="24" height="24"','width="17" height="17"')}</div>
     <div style="font-weight:800; font-size:15px;">Peta Interaktif</div>
   </div>
-  <div style="flex:1; position:relative; margin:0 14px 14px; border-radius:24px; overflow:hidden; background:
-    radial-gradient(circle at 30% 30%, #CFE3FF, transparent 55%),
-    radial-gradient(circle at 75% 60%, #C7F2E7, transparent 50%),
-    linear-gradient(160deg,#E8F1FF,#DCEBFF 60%, #D7EFEA);">
-    <svg width="100%" height="100%" viewBox="0 0 340 500" style="position:absolute;inset:0;opacity:.5;">
-      <path d="M40 60 Q120 20 200 70 T320 90 Q300 180 250 220 T220 340 Q160 400 100 380 T40 300 Q10 200 40 60Z" fill="#BFD9FF" opacity=".5"/>
-      <path d="M60 400 Q140 430 220 410 T300 440" stroke="#9FC4FF" stroke-width="3" fill="none" opacity=".6"/>
-    </svg>
-    ${mapPin(90,150,"🏨","#1858E0","Hotel Anda")}
-    ${mapPin(180,110,"🍽️","#FF9F5A","Sari Organik")}
-    ${mapPin(230,220,"🛕","#00C2A0","Tirta Empul")}
-    ${mapPin(130,260,"🏧","#7C4FE0","BCA ATM")}
-    ${mapPin(260,320,"🏦","#0E3EA8","BCA Ubud")}
-    ${mapPin(70,340,"🎁","#E3A73C","Promo QRIS")}
+  <div style="flex:1; position:relative; margin:0 14px 14px; border-radius:24px; overflow:hidden; background:#E8F1FF;">
+    <div id="leafletMapEl" style="position:absolute; inset:0;"></div>
+    <div style="position:absolute; left:0; right:0; bottom:0; height:36px; background:linear-gradient(180deg,transparent,rgba(255,255,255,.5)); pointer-events:none;"></div>
   </div>
 </div>`;
-function mapPin(x,y,emoji,color,label){
-  return `<div class="pinwrap" data-label="${label}" data-color="${color}" style="position:absolute; left:${x}px; top:${y}px; transform:translate(-50%,-100%); cursor:pointer;">
-    <div style="width:40px;height:40px;border-radius:14px 14px 14px 4px; background:${color}; display:flex;align-items:center;justify-content:center; font-size:18px; box-shadow:0 8px 18px ${color}55; transform:rotate(-45deg); animation:pinPulse 2.4s ease-in-out infinite;">
-      <span style="transform:rotate(45deg);">${emoji}</span>
-    </div>
-  </div>`;
+function mapPinIcon(emoji,color){
+  return L.divIcon({
+    className:"",
+    html:`<div style="width:40px;height:40px;border-radius:14px 14px 14px 4px; background:${color}; display:flex;align-items:center;justify-content:center; font-size:18px; box-shadow:0 8px 18px ${color}55; transform:rotate(-45deg); animation:pinPulse 2.4s ease-in-out infinite;"><span style="transform:rotate(45deg); display:block;">${emoji}</span></div>`,
+    iconSize:[40,40], iconAnchor:[20,40]
+  });
+}
+let leafletMapInstance = null;
+function initLeafletMap(){
+  const el = document.getElementById("leafletMapEl");
+  if(!el || typeof L==="undefined") return;
+  if(leafletMapInstance){ leafletMapInstance.remove(); leafletMapInstance = null; }
+  const center = destCoords(state.trip.destination);
+  const map = L.map(el, { zoomControl:false, attributionControl:false }).setView(center, 15);
+  L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", { maxZoom:19 }).addTo(map);
+  L.control.zoom({ position:"bottomright" }).addTo(map);
+  MAP_POI_OFFSETS.forEach(p=>{
+    const marker = L.marker([center[0]+p.dy, center[1]+p.dx], { icon: mapPinIcon(p.emoji, p.color) }).addTo(map);
+    marker.on("click", ()=> showMapPopup(p.label, p.color));
+  });
+  leafletMapInstance = map;
+  setTimeout(()=> map.invalidateSize(), 200);
 }
 
 /* ---- Destination detail ---- */
@@ -1497,9 +1524,7 @@ function bindScreenEvents(name, root){
   }
   if(name==="mapExplore"){
     root.querySelector("#backBtn").onclick = ()=> setScreen("explore");
-    root.querySelectorAll(".pinwrap").forEach(p=>{
-      p.onclick = ()=> showMapPopup(p.dataset.label, p.dataset.color);
-    });
+    setTimeout(initLeafletMap, 60);
   }
   if(name==="destination"){
     root.querySelector("#backBtn").onclick = ()=> setScreen("explore");
