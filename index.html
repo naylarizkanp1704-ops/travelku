@@ -459,10 +459,12 @@ function healthColor(){
 }
 function toast(msg, icon=ic.check){
   const t = document.getElementById("toast");
-  t.innerHTML = `<span style="width:20px;height:20px;color:#00C2A0;flex:0 0 auto">${icon}</span><span>${msg}</span>`;
+  t.innerHTML = `<span style="width:20px;height:20px;color:#00C2A0;flex:0 0 auto">${icon}</span><span style="flex:1;">${msg}</span><span id="toastClose" style="width:16px;height:16px;flex:0 0 auto;cursor:pointer;opacity:.7;">${ic.plus.replace('viewBox="0 0 24 24"','viewBox="0 0 24 24" style="transform:rotate(45deg)"')}</span>`;
   t.classList.add("show");
   clearTimeout(window._toastTimer);
   window._toastTimer = setTimeout(()=>t.classList.remove("show"), 2600);
+  const closeBtn = document.getElementById("toastClose");
+  if(closeBtn) closeBtn.onclick = ()=>{ clearTimeout(window._toastTimer); t.classList.remove("show"); };
 }
 
 /* ---- Number count-up micro-interaction ---- */
